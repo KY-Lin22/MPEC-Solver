@@ -15,11 +15,11 @@ classdef stabilized_SQP_Izamailov2015 < handle
             % with field 'x', 'f', 'h', 'g', 
             %            'fx', 'hx', 'gx', 
             %            'xDim', 'hDim', 'gDim'
-            %            'lambda' (Lagrangian multiplier for h), 'mu' (Lagrangian multiplier for g)
-            %            'sigma' (dual stabilization parameter)
-            %            'L', 'Lx', 'Lxx',
-            %            'AugL', 'AugLx', 'AugLx_eta'
-            %            'rho', 'psi',
+            %            'lambda' (Lagrangian multiplier for h), 'mu'(Lagrangian multiplier for g)
+            %            'sigma' (dual stabilization parameter), 'eta'(primal direction)
+            %            'L', 'Lx', 'Lxx', (Lagrangian function, Jacobian and Hessian)
+            %            'AugL', 'AugLx', 'AugLx_eta' (Augmented Lagrangian function, Jacobian and Jacobian vector product)
+            %            'rho'(natural residual of KKT system),  'psi'(L2 norm constraint violation),
             %            'qp_H', 'qp_A'(Hessian and Jacobian matrix used in qpoases solver)
         Option % struct, solver option
         FunObj % % struct, CasADi function object 
@@ -182,30 +182,22 @@ classdef stabilized_SQP_Izamailov2015 < handle
             Option.tol_rho = 1e-6; % tolerance for natural residual (default: 1e-6, end of paragraph 1 in page 424)
         end               
         
-        function [hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k, innerLoopFlag] = ...
-                innerLoopIteration(self, hat_x, bar_lambda, bar_mu, r, epsilon, sigma)
-            %%
-            % import CasADi to workspace
-            addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
-            import casadi.*
-            
-            % x_jPrev: previous iterate x_{j - 1}, x_j: new iterate x_{j}
-            
-            % initialize iterate used in inner loop iteration
-            hat_x_jPrev = hat_x;
-            
+        function [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, innerLoopFlag] = ...
+                innerLoopIteration(self, hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k)          
+                 
+            % x_j: given iterate x_{j}, x_jNext: new iterate x_{j+1}
+            % initialize given iterate used in inner loop iteration
+            hat_x_j = hat_x_k;            
             has_find_new_outer_iterate = false;% step 2 and 7 will set it as true
             lineSearchFlag = true;
             
-            %% inner loop iteration
-            
-            for j = 1 : self.Option.maxInnerIterNum + 1
+            for j = 0 : self.Option.maxInnerIterNum
                 %% Checking termination and exitFlag
                 % check inner loop termination
                 if has_find_new_outer_iterate
                     exitFlag = true;
                     innerLoopFlag = 'Success';
-                elseif (j == self.Option.maxInnerIterNum + 1) || (~lineSearchFlag)
+                elseif (j == self.Option.maxInnerIterNum) || (~lineSearchFlag)
                     exitFlag = true;
                     innerLoopFlag = 'Fail';
                 else
@@ -217,37 +209,37 @@ classdef stabilized_SQP_Izamailov2015 < handle
                     switch innerLoopFlag
                         case 'Success'
                             % return iterate estimated from step 2 or 7
-                            hat_x_k = hat_x_k_est;
-                            bar_lambda_k = bar_lambda_k_est;
-                            bar_mu_k = bar_mu_k_est;
-                            r_k = r_k_est;
-                            epsilon_k = epsilon_k_est;
-                            sigma_k = sigma_k_est;
+                            hat_x_kNext = hat_x_kNext_est;
+                            bar_lambda_kNext = bar_lambda_kNext_est;
+                            bar_mu_kNext = bar_mu_kNext_est;
+                            r_kNext = r_kNext_est;
+                            epsilon_kNext = epsilon_kNext_est;
+                            sigma_kNext = sigma_kNext_est;
                         case 'Fail'
                             % return iterate from input
-                            hat_x_k = hat_x;
-                            bar_lambda_k = bar_lambda;
-                            bar_mu_k = bar_mu;
-                            r_k = r;
-                            epsilon_k = epsilon;
-                            sigma_k = sigma;
+                            hat_x_kNext = hat_x_k;
+                            bar_lambda_kNext = bar_lambda_k;
+                            bar_mu_kNext = bar_mu_k;
+                            r_kNext = r_k;
+                            epsilon_kNext = epsilon_k;
+                            sigma_kNext = sigma_k;
                     end
                     break
-                end
+                end              
                 
-                %% function and Jacobian evaluation of previous inner loop iterate
+                %% function and Jacobian evaluation of given inner loop iterate
                 % problem function and Jacobian
-                fx_jPrev = self.FunObj.fx(hat_x_jPrev);
-                h_jPrev  = self.FunObj.h(hat_x_jPrev);
-                g_jPrev  = self.FunObj.g(hat_x_jPrev);
+                fx_j = self.FunObj.fx(hat_x_j);
+                h_j  = self.FunObj.h(hat_x_j);
+                g_j  = self.FunObj.g(hat_x_j);
                 % matrix used in qpoases
-                qp_H_jPrev = self.FunObj.qp_H(hat_x_jPrev, bar_lambda, bar_mu, sigma);
-                qp_A_jPrev = self.FunObj.qp_A(hat_x_jPrev, sigma);
-                qp_g_jPrev = [fx_jPrev, DM.zeros(1, self.NLP.hDim + self.NLP.gDim)];
-                qp_lba = [-h_jPrev - sigma * bar_lambda;...
-                    -inf*DM.ones(self.NLP.gDim, 1)];
-                qp_uba = [-h_jPrev - sigma * bar_lambda;...
-                    -g_jPrev - sigma * bar_mu];
+                qp_H_j = self.FunObj.qp_H(hat_x_j, bar_lambda_k, bar_mu_k, sigma_k);
+                qp_A_j = self.FunObj.qp_A(hat_x_j, sigma_k);
+                qp_g_j = [fx_j, casadi.DM.zeros(1, self.NLP.hDim + self.NLP.gDim)];
+                qp_lba_j = [-h_j - sigma_k * bar_lambda_k;...
+                    -inf*casadi.DM.ones(self.NLP.gDim, 1)];
+                qp_uba_j = [-h_j - sigma_k * bar_lambda_k;...
+                    -g_j - sigma_k * bar_mu_k];
                 HessianType = 'LagrangianHessian';
                 
                 %% Algorithm 1 (step 1 - 4 while loop)
@@ -256,34 +248,34 @@ classdef stabilized_SQP_Izamailov2015 < handle
                 omega = 10;
                 while ~flag_find_new_outer_iterate_or_descent_for_AugL
                     % step 1: solve QP subproblem equ (7) for primal and dual direction
-                    qp_solution = self.FunObj.qp_solver('h', qp_H_jPrev, 'g', qp_g_jPrev, 'a', qp_A_jPrev, ...
-                        'lba', qp_lba, 'uba', qp_uba,...
+                    qp_solution = self.FunObj.qp_solver('h', qp_H_j, 'g', qp_g_j, 'a', qp_A_j, ...
+                        'lba', qp_lba_j, 'uba', qp_uba_j,...
                         'x0', zeros(self.NLP.xDim + self.NLP.hDim + self.NLP.gDim, 1));
                     dx = qp_solution.x(1 : self.NLP.xDim, 1);
-                    dlambda = qp_solution.x(self.NLP.xDim + 1 : self.NLP.xDim + self.NLP.hDim, 1) - bar_lambda;
-                    dmu = qp_solution.x(self.NLP.xDim + self.NLP.hDim + 1 : end, 1) - bar_mu;
+                    dlambda = qp_solution.x(self.NLP.xDim + 1 : self.NLP.xDim + self.NLP.hDim, 1) - bar_lambda_k;
+                    dmu = qp_solution.x(self.NLP.xDim + self.NLP.hDim + 1 : end, 1) - bar_mu_k;
                     
                     qp_status = self.FunObj.qp_solver.stats.return_status;
                     if strcmp(qp_status, 'Successful return.')
                         % step 2: check whether we can obtain a new iterate with full step along the direction
-                        check_lambda =  (full(min(bar_lambda + dlambda)) >= self.Option.bar_lambdaMin) && ...
-                            (full(max(bar_lambda + dlambda)) <= self.Option.bar_lambdaMax) ;
-                        check_mu = (full(min(bar_mu + dmu)) >= 0) && (full(max(bar_mu + dmu)) <= self.Option.bar_muMax) ;
-                        rho_est = self.FunObj.rho(hat_x_jPrev + dx, bar_lambda + dlambda, bar_mu + dmu);
+                        check_lambda =  (full(min(bar_lambda_k + dlambda)) >= self.Option.bar_lambdaMin) && ...
+                            (full(max(bar_lambda_k + dlambda)) <= self.Option.bar_lambdaMax) ;
+                        check_mu = (full(min(bar_mu_k + dmu)) >= 0) && (full(max(bar_mu_k + dmu)) <= self.Option.bar_muMax) ;
+                        rho_est = self.FunObj.rho(hat_x_j + dx, bar_lambda_k + dlambda, bar_mu_k + dmu);
                         equ8_is_satisfied = (check_lambda) && (check_mu) && (rho_est <= r);
                         if (strcmp(HessianType, 'LagrangianHessian')) && (equ8_is_satisfied)
                             % set new outer iterate (sSQP iteration) and then break this while loop
                             has_find_new_outer_iterate = true;
-                            hat_x_k_est = hat_x_jPrev + dx;
-                            bar_lambda_k_est = bar_lambda + dlambda;
-                            bar_mu_k_est = bar_mu + dmu;
-                            r_k_est = rho_est;
-                            epsilon_k_est = epsilon;
-                            sigma_k_est = self.Option.q * r;
+                            hat_x_kNext_est = hat_x_j + dx;
+                            bar_lambda_kNext_est = bar_lambda_k + dlambda;
+                            bar_mu_kNext_est = bar_mu_k + dmu;
+                            r_kNext_est = rho_est;
+                            epsilon_kNext_est = epsilon_k;
+                            sigma_kNext_est = self.Option.q * r_k;
                             break
                         end
                         % step 3: check whether we can obtain a primal direction which is descent for augmented Lagrangian
-                        AugLx_eta = self.FunObj.AugLx_eta(hat_x_jPrev, bar_lambda, bar_mu, sigma, dx);
+                        AugLx_eta = self.FunObj.AugLx_eta(hat_x_j, bar_lambda_k, bar_mu_k, sigma_k, dx);
                         norm_dx = norm(dx);
                         equ11_is_satisfied = (full(AugLx_eta) <= full(-self.Option.gamma*norm_dx^2));
                         if equ11_is_satisfied
@@ -293,98 +285,96 @@ classdef stabilized_SQP_Izamailov2015 < handle
                         % step 4: modify Hessian
                         modify_Hessian = [omega*DM.eye(self.NLP.xDim), DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
                             DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim + self.NLP.hDim + self.NLP.gDim)];
-                        qp_H_jPrev = qp_H_jPrev + modify_Hessian;
+                        qp_H_j = qp_H_j + modify_Hessian;
                         HessianType = 'ModifiedHessian';
                         omega = 10 * omega;
                     else
                         % step 4: modify Hessian
                         modify_Hessian = [omega*DM.eye(self.NLP.xDim), DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
                             DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim + self.NLP.hDim + self.NLP.gDim)];
-                        qp_H_jPrev = qp_H_jPrev + modify_Hessian;
+                        qp_H_j = qp_H_j + modify_Hessian;
                         HessianType = 'ModifiedHessian';
-                        omega = 10 * omega;
+                        omega = 10 * omega;                        
                     end
                 end
-                
-                %% Algorithm 1 (step 5 - step 7 if loop)
-                % perform AugL iteration after step 3, i.e., the case that step 2 does not satisfy
-                if ~has_find_new_outer_iterate
-                    % step 5: line search
-                    for i = 0 : self.Option.maxLineSearchIterNum + 1
-                        % check failure flag
-                        if i == self.Option.maxLineSearchIterNum + 1
-                            lineSearchFlag = false;
-                            break
-                        end
-                        % Amijo rules
-                        AugL_Prev = self.FunObj.AugL(hat_x_jPrev, bar_lambda, bar_mu, sigma);
-                        hat_x_j = hat_x_jPrev + (self.Option.tau)^i*dx;
-                        AugL_j = self.FunObj.AugL(hat_x_j, bar_lambda, bar_mu, sigma);
-                        if (full(AugL_j) <= full(AugL_Prev + self.Option.epsilon * (self.Option.tau)^i * AugLx_eta))
-                            % terminate line search 'for loop'
-                            break
-                        end
-                    end
-                    
-                    if lineSearchFlag
-                        % step 6 check stationary of AugL
-                        AugLx_j = self.FunObj.AugLx(hat_x_j, bar_lambda, bar_mu, sigma);
-                        if full(norm(AugLx_j)) <= epsilon
-                            % step 7: set new outer iterate (AugL iteration)
-                            has_find_new_outer_iterate = true;
-                            epsilon_k_est = self.Option.xita * epsilon;
-                            hat_x_k_est = hat_x_j;
-                            % dual variable
-                            h_j = self.FunObj.h(hat_x_j);
-                            bar_lambda_k_est = bar_lambda + 1/sigma*h_j;
-                            if (full(min(bar_lambda_k_est)) >= self.Option.bar_lambdaMin) && (full(max(bar_lambda_k_est)) <= self.Option.bar_lambdaMax)
-                                % bar_lambda_k_est satisfies dual bounds
-                            else
-                                bar_lambda_k_est = min(max(self.Option.bar_lambdaMin*DM.ones(self.NLP.hDim, 1), bar_lambda_k_est),...
-                                    self.Option.bar_lambdaMax *DM.ones(self.NLP.hDim, 1));
-                            end
-                            g_j = self.FunObj.g(hat_x_j);
-                            bar_mu_k_est = max(zeros(self.NLP.gDim, 1), bar_mu + 1/sigma*g_j);
-                            if (full(min(bar_mu_k_est)) >= 0) && (full(max(bar_mu_k_est)) <= self.Option.bar_muMax)
-                                % bar_mu_k_est satisfies dual bounds
-                            else
-                                bar_mu_k_est = min(max(DM.zeros(self.NLP.gDim, 1), bar_mu_k_est),...
-                                    self.Option.bar_muMax *DM.ones(self.NLP.gDim, 1));
-                            end
-                            % natural residual tol and dual stabilization variable
-                            rho_k_est = self.FunObj.rho(hat_x_k_est, bar_lambda_k_est, bar_mu_k_est);
-                            if full(rho_k_est) <= full(r)
-                                r_k_est = self.Option.q * r;
-                                sigma_k_est = rho_k_est;
-                            else
-                                r_k_est = r;
-                                psi_k_est = self.FunObj.psi(hat_x_k_est, bar_mu_k_est);
-                                psi = self.FunObj.psi(hat_x, bar_mu);
-                                if full(psi_k_est) <= full(self.Option.delta*psi)
-                                    sigma_k_est = sigma;
-                                else
-                                    sigma_k_est = self.Option.kappa*sigma;
-                                end
-                            end
-                        else
-                            % prepare primal variable for next inner loop iteration
-                            hat_x_jPrev = hat_x_j;
-                        end
-                        
-                    end
-                    
-                end
-                
+                                               
+                 %% Algorithm 1 (step 5 - step 7 if loop)
+                 % perform AugL iteration after step 3, i.e., the case that step 2 does not satisfy
+                 if ~has_find_new_outer_iterate
+                     % step 5: line search
+                     for i = 0 : self.Option.maxLineSearchIterNum
+                         % check failure flag
+                         if i == self.Option.maxLineSearchIterNum
+                             lineSearchFlag = false;
+                             break
+                         end
+                         % Amijo rules
+                         AugL_j = self.FunObj.AugL(hat_x_j, bar_lambda_k, bar_mu_k, sigma_k);
+                         hat_x_jNext = hat_x_j + (self.Option.tau)^i*dx;
+                         AugL_jNext = self.FunObj.AugL(hat_x_jNext, bar_lambda_k, bar_mu_k, sigma_k);
+                         if (full(AugL_jNext) <= full(AugL_j + self.Option.epsilon * (self.Option.tau)^i * AugLx_eta))
+                             % terminate line search 'for loop'
+                             break
+                         end
+                     end
+                     
+                     if lineSearchFlag
+                         % step 6 check stationary of AugL
+                         AugLx_jNext = self.FunObj.AugLx(hat_x_jNext, bar_lambda_k, bar_mu_k, sigma_k);
+                         if full(norm(AugLx_jNext)) <= epsilon_k
+                             % step 7: set new outer iterate (AugL iteration)
+                             has_find_new_outer_iterate = true;
+                             epsilon_kNext_est = self.Option.xita * epsilon_k;
+                             hat_x_kNext_est = hat_x_jNext;                            
+                             % dual variable
+                             h_jNext = self.FunObj.h(hat_x_jNext);
+                             bar_lambda_kNext_est = bar_lambda_k + 1/sigma_k*h_jNext;
+                             if (full(min(bar_lambda_kNext_est)) >= self.Option.bar_lambdaMin) && (full(max(bar_lambda_kNext_est)) <= self.Option.bar_lambdaMax)
+                                 % bar_lambda_kNext_est satisfies dual bounds
+                             else
+                                 bar_lambda_kNext_est = min(max(self.Option.bar_lambdaMin*DM.ones(self.NLP.hDim, 1), bar_lambda_kNext_est),...
+                                     self.Option.bar_lambdaMax *DM.ones(self.NLP.hDim, 1));
+                             end
+                             g_jNext = self.FunObj.g(hat_x_jNext);
+                             bar_mu_kNext_est = max(zeros(self.NLP.gDim, 1), bar_mu_k + 1/sigma_k*g_jNext);
+                             if (full(min(bar_mu_kNext_est)) >= 0) && (full(max(bar_mu_kNext_est)) <= self.Option.bar_muMax)
+                                 % bar_mu_kNext_est satisfies dual bounds
+                             else
+                                 bar_mu_kNext_est = min(max(DM.zeros(self.NLP.gDim, 1), bar_mu_kNext_est),...
+                                     self.Option.bar_muMax *DM.ones(self.NLP.gDim, 1));
+                             end
+                             % natural residual tol and dual stabilization variable
+                             rho_kNext_est = self.FunObj.rho(hat_x_kNext_est, bar_lambda_kNext_est, bar_mu_kNext_est);
+                             if full(rho_kNext_est) <= full(r_k)
+                                 r_kNext_est = self.Option.q * r_k;
+                                 sigma_kNext_est = rho_kNext_est;
+                             else
+                                 r_kNext_est = r_k;
+                                 psi_kNext_est = self.FunObj.psi(hat_x_kNext_est, bar_mu_kNext_est);
+                                 psi_k = self.FunObj.psi(hat_x_k, bar_mu_k);
+                                 if full(psi_kNext_est) <= full(self.Option.delta*psi_k)
+                                     sigma_kNext_est = sigma_k;
+                                 else
+                                     sigma_kNext_est = self.Option.kappa*sigma_k;
+                                 end
+                             end
+                         else
+                             % prepare primal variable for next inner loop iteration
+                             hat_x_j = hat_x_jNext;
+                         end
+                         
+                     end
+                     
+                 end
+                           
             end
+
             
         end
         
         function [x_Opt, Info] = solveNLP(self, x_Init)
-            %%           
-            % import CasADi to workspace
-            addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
-            import casadi.*
-            
+            %%                  
+            timeStart = tic;
             % very first primal and dual variable
             x_0 = x_Init;
             lambda_0 = zeros(self.NLP.hDim, 1); % here I initilize the very first dual variables with value which satisfies their estimate    
@@ -400,27 +390,27 @@ classdef stabilized_SQP_Izamailov2015 < handle
             %% SQP iteration rountie
             % k: outer iteration counter, increase after sSQP(step 2 in ref.) and Aug-L iteration(step 6 and 7 in ref.)
             % j: inner iteration counter, increase after current Aug-L subproblem does not have acceptable stationary property(step 6 in ref.)            
-            % x: previous iterate x_{k - 1}, x_k: new iterate x_{k}
+            % in k iteration, x_k is the given iterate x_{k}, x_kNext is the new iterate x_{k+1}
             
-            % initialize iterate used in outer loop iteration
-            hat_x = hat_x_0;
-            bar_lambda = bar_lambda_0;
-            bar_mu = bar_mu_0;
-            r = self.Option.r0;
-            epsilon = self.Option.epsilon0;
-            sigma = self.Option.sigma0;
+            % initialize given iterate used in outer loop iteration
+            hat_x_k = hat_x_0;
+            bar_lambda_k = bar_lambda_0;
+            bar_mu_k = bar_mu_0;
+            r_k = self.Option.r0;
+            epsilon_k = self.Option.epsilon0;
+            sigma_k = self.Option.sigma0;
             innerLoopFlag = 'Success';
             
             % outer loop iteration
-            for k = 1 : self.Option.maxOuterIterNum + 1
-                % STEP 1: compute natural residual rho of previous iterate (k - 1)
-                rho = self.FunObj.rho(hat_x, bar_lambda, bar_mu);                
+            for k = 0 : self.Option.maxOuterIterNum
+                % STEP 1: compute natural residual rho of given iterate (k)
+                rho_k = self.FunObj.rho(hat_x_k, bar_lambda_k, bar_mu_k);                
                 % STEP 2: check outer loop termination (end of paragraph 1 in page 424)
-                if full(rho) < self.Option.tol_rho
+                if full(rho_k) < self.Option.tol_rho
                     % solver finds the optimal solution
                     exitFlag = true;
                     terminalStatus = 'Success';
-                elseif (k == self.Option.maxOuterIterNum + 1) || (strcmp(innerLoopFlag, 'Fail'))
+                elseif (k == self.Option.maxOuterIterNum) || (strcmp(innerLoopFlag, 'Fail'))
                     % solver fails to find the optimal solution
                     exitFlag = true;
                     terminalStatus = 'Fail'; 
@@ -429,22 +419,25 @@ classdef stabilized_SQP_Izamailov2015 < handle
                 end
                 % STEP 3: check exitFlag
                 if exitFlag
-                    % return previous iterate as solution
-                    x_Opt = hat_x;
-                    % organize output information
-                    Info = struct('iterNum', k - 1, 'terminalStatus', terminalStatus);
+                    timeElapsed = toc(timeStart);
+                    % return given iterate as solution
+                    x_Opt = hat_x_k;
+                    % organize output information   
+                    Info = struct('iterNum', k, 'terminalStatus', terminalStatus, 'time', timeElapsed, ...
+                        'lambda', bar_lambda_k, 'mu', bar_mu_k,...
+                        'rho', rho_k);
                     break
                 end
-                % STEP 4: inner loop iteration
-                [hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k, innerLoopFlag] = ...
-                    self.innerLoopIteration(hat_x, bar_lambda, bar_mu, r, epsilon, sigma);
+                % STEP 4: inner loop iteration (Algorithm 1)
+                [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, innerLoopFlag] = ...
+                    self.innerLoopIteration(hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k);
                 % STEP 5: prepare for next outer iteration
-                hat_x = hat_x_k;
-                bar_lambda = bar_lambda_k;
-                bar_mu = bar_mu_k;
-                r = r_k;
-                epsilon = epsilon_k;
-                sigma = sigma_k;
+                hat_x_k = hat_x_kNext;
+                bar_lambda_k = bar_lambda_kNext;
+                bar_mu_k = bar_mu_kNext;
+                r_k = r_kNext;
+                epsilon_k = epsilon_kNext;
+                sigma_k = sigma_kNext;
             end
             
         end
