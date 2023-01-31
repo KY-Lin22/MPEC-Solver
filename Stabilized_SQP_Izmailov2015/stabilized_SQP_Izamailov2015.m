@@ -134,7 +134,14 @@ classdef stabilized_SQP_Izamailov2015 < handle
             qp = struct('h', self.NLP.qp_H.sparsity(), 'a', self.NLP.qp_A.sparsity());
             qp_options = struct();     
             qp_options.error_on_fail = false;
-            % qp_options.printLevel = 'high'; % 'none', 'low', 'medium', 'high'
+            qp_options.printLevel = 'none'; % 'none', 'low', 'medium', 'high' (see qpoases manual sec 5.2)
+            qp_options.hessian_type = 'semidef';% 'unknown', 'posdef', 'semidef', 'indef', 'zero', 'identity' (see qpoases manual sec 4.4, 4.5)
+%             qp_options.enableInertiaCorrection = true;
+
+%             qp_options.enableRegularisation = true; %(this three option corresponds to unbounded QP, see qpoases manual sec 4.5)            
+            qp_options.enableFlippingBounds = true;          
+            qp_options.enableFarBounds = true;
+            
             self.FunObj.qp_solver = casadi.conic('qp_solver', 'qpoases', qp, qp_options);            
             
         end
@@ -174,6 +181,9 @@ classdef stabilized_SQP_Izamailov2015 < handle
             Option.bar_lambdaMax = 1e10; % paragraph 3 in page 424
             Option.bar_muMax = 1e10; % paragraph 3 in page 424
             
+            % modified Hessian
+            Option.omegaMax = 1e10;
+            
             % termination condition
             Option.maxOuterIterNum = 500; % kMax, positive int(default: 500, end of paragraph 1 in page 424)
             Option.maxInnerIterNum = 50; % jMax, positive int(default: none, so I specify by myself, although 
@@ -182,14 +192,15 @@ classdef stabilized_SQP_Izamailov2015 < handle
             Option.tol_rho = 1e-6; % tolerance for natural residual (default: 1e-6, end of paragraph 1 in page 424)
         end               
         
-        function [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, innerLoopFlag] = ...
-                innerLoopIteration(self, hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k)          
+        function [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, iterateType_kNext, innerLoopFlag] = ...
+                innerLoopIteration(self, hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k, iterateType_k)          
                  
             % x_j: given iterate x_{j}, x_jNext: new iterate x_{j+1}
             % initialize given iterate used in inner loop iteration
             hat_x_j = hat_x_k;            
             has_find_new_outer_iterate = false;% step 2 and 7 will set it as true
             lineSearchFlag = true;
+            modifiedHessianFlag = true;
             
             for j = 0 : self.Option.maxInnerIterNum
                 %% Checking termination and exitFlag
@@ -197,9 +208,19 @@ classdef stabilized_SQP_Izamailov2015 < handle
                 if has_find_new_outer_iterate
                     exitFlag = true;
                     innerLoopFlag = 'Success';
-                elseif (j == self.Option.maxInnerIterNum) || (~lineSearchFlag)
+                elseif (j == self.Option.maxInnerIterNum) || (~lineSearchFlag) || (~modifiedHessianFlag)
                     exitFlag = true;
                     innerLoopFlag = 'Fail';
+                    disp(' ')
+                    if j == self.Option.maxInnerIterNum
+                        disp('MSG: inner loop fails because it has reached the maximum inner iteration number')
+                    end
+                    if ~lineSearchFlag
+                        disp('MSG: inner loop fails because line search can not find a not so small step size')
+                    end
+                    if~modifiedHessianFlag
+                        disp('MSG: inner loop fails because omega in modified Hessian exceeds the limit omegaMax')
+                    end
                 else
                     exitFlag = false;
                 end
@@ -215,6 +236,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                             r_kNext = r_kNext_est;
                             epsilon_kNext = epsilon_kNext_est;
                             sigma_kNext = sigma_kNext_est;
+                            iterateType_kNext = iterateType_kNext_est;
                         case 'Fail'
                             % return iterate from input
                             hat_x_kNext = hat_x_k;
@@ -223,6 +245,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                             r_kNext = r_k;
                             epsilon_kNext = epsilon_k;
                             sigma_kNext = sigma_k;
+                            iterateType_kNext = iterateType_k;
                     end
                     break
                 end              
@@ -256,13 +279,14 @@ classdef stabilized_SQP_Izamailov2015 < handle
                     dmu = qp_solution.x(self.NLP.xDim + self.NLP.hDim + 1 : end, 1) - bar_mu_k;
                     
                     qp_status = self.FunObj.qp_solver.stats.return_status;
+                    disp(['inner iter j = ', num2str(j), ' --> qp return status: ', qp_status])
                     if strcmp(qp_status, 'Successful return.')
                         % step 2: check whether we can obtain a new iterate with full step along the direction
                         check_lambda =  (full(min(bar_lambda_k + dlambda)) >= self.Option.bar_lambdaMin) && ...
                             (full(max(bar_lambda_k + dlambda)) <= self.Option.bar_lambdaMax) ;
                         check_mu = (full(min(bar_mu_k + dmu)) >= 0) && (full(max(bar_mu_k + dmu)) <= self.Option.bar_muMax) ;
                         rho_est = self.FunObj.rho(hat_x_j + dx, bar_lambda_k + dlambda, bar_mu_k + dmu);
-                        equ8_is_satisfied = (check_lambda) && (check_mu) && (rho_est <= r);
+                        equ8_is_satisfied = (check_lambda) && (check_mu) && (full(rho_est) <= full(r_k));
                         if (strcmp(HessianType, 'LagrangianHessian')) && (equ8_is_satisfied)
                             % set new outer iterate (sSQP iteration) and then break this while loop
                             has_find_new_outer_iterate = true;
@@ -271,7 +295,8 @@ classdef stabilized_SQP_Izamailov2015 < handle
                             bar_mu_kNext_est = bar_mu_k + dmu;
                             r_kNext_est = rho_est;
                             epsilon_kNext_est = epsilon_k;
-                            sigma_kNext_est = self.Option.q * r_k;
+                            sigma_kNext_est = self.Option.q * r_k;    
+                            iterateType_kNext_est = 'sSQP_iterate';
                             break
                         end
                         % step 3: check whether we can obtain a primal direction which is descent for augmented Lagrangian
@@ -282,16 +307,26 @@ classdef stabilized_SQP_Izamailov2015 < handle
                             % break this while loop and perform step 5
                             break
                         end
-                        % step 4: modify Hessian
-                        modify_Hessian = [omega*DM.eye(self.NLP.xDim), DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
-                            DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim + self.NLP.hDim + self.NLP.gDim)];
+                        % step 4: modify Hessian    
+                        if omega >= self.Option.omegaMax
+                            % break this while loop and terminate the overall rountie
+                            modifiedHessianFlag = false;
+                            break
+                        end
+                        modify_Hessian = [omega*casadi.DM.eye(self.NLP.xDim), casadi.DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
+                            casadi.DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim), casadi.DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.hDim + self.NLP.gDim)];
                         qp_H_j = qp_H_j + modify_Hessian;
                         HessianType = 'ModifiedHessian';
                         omega = 10 * omega;
                     else
                         % step 4: modify Hessian
-                        modify_Hessian = [omega*DM.eye(self.NLP.xDim), DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
-                            DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim + self.NLP.hDim + self.NLP.gDim)];
+                        if omega >= self.Option.omegaMax
+                            % break this while loop and terminate the overall rountie
+                            modifiedHessianFlag = false;
+                            break
+                        end
+                        modify_Hessian = [omega*casadi.DM.eye(self.NLP.xDim), casadi.DM.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
+                            casadi.DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim), casadi.DM.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.hDim + self.NLP.gDim)];
                         qp_H_j = qp_H_j + modify_Hessian;
                         HessianType = 'ModifiedHessian';
                         omega = 10 * omega;                        
@@ -300,11 +335,12 @@ classdef stabilized_SQP_Izamailov2015 < handle
                                                
                  %% Algorithm 1 (step 5 - step 7 if loop)
                  % perform AugL iteration after step 3, i.e., the case that step 2 does not satisfy
-                 if ~has_find_new_outer_iterate
+                 if (~has_find_new_outer_iterate) && modifiedHessianFlag
                      % step 5: line search
                      for i = 0 : self.Option.maxLineSearchIterNum
                          % check failure flag
                          if i == self.Option.maxLineSearchIterNum
+                             % break line search 'for loop'
                              lineSearchFlag = false;
                              break
                          end
@@ -322,7 +358,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                          % step 6 check stationary of AugL
                          AugLx_jNext = self.FunObj.AugLx(hat_x_jNext, bar_lambda_k, bar_mu_k, sigma_k);
                          if full(norm(AugLx_jNext)) <= epsilon_k
-                             % step 7: set new outer iterate (AugL iteration)
+                             % step 7: set new outer iterate (AugL iteration)                             
                              has_find_new_outer_iterate = true;
                              epsilon_kNext_est = self.Option.xita * epsilon_k;
                              hat_x_kNext_est = hat_x_jNext;                            
@@ -358,6 +394,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                                      sigma_kNext_est = self.Option.kappa*sigma_k;
                                  end
                              end
+                             iterateType_kNext_est = 'AugL_iterate';
                          else
                              % prepare primal variable for next inner loop iteration
                              hat_x_j = hat_x_jNext;
@@ -399,13 +436,18 @@ classdef stabilized_SQP_Izamailov2015 < handle
             r_k = self.Option.r0;
             epsilon_k = self.Option.epsilon0;
             sigma_k = self.Option.sigma0;
+            iterateType_k = 'Init';
             innerLoopFlag = 'Success';
-            
+            disp('********************************************************************')
             % outer loop iteration
             for k = 0 : self.Option.maxOuterIterNum
                 % STEP 1: compute natural residual rho of given iterate (k)
                 rho_k = self.FunObj.rho(hat_x_k, bar_lambda_k, bar_mu_k);                
-                % STEP 2: check outer loop termination (end of paragraph 1 in page 424)
+                % STEP 2: check outer loop termination (end of paragraph 1 in page 424)               
+                disp(['Iter: ', num2str(k), '; ',...
+                    'iterateType: ', iterateType_k, '; ',...
+                    'rho: ', num2str(full(rho_k))])
+                disp('--------------------------------------------------------------------')
                 if full(rho_k) < self.Option.tol_rho
                     % solver finds the optimal solution
                     exitFlag = true;
@@ -425,12 +467,20 @@ classdef stabilized_SQP_Izamailov2015 < handle
                     % organize output information   
                     Info = struct('iterNum', k, 'terminalStatus', terminalStatus, 'time', timeElapsed, ...
                         'lambda', bar_lambda_k, 'mu', bar_mu_k,...
-                        'rho', rho_k);
+                        'rho', rho_k, 'iterateType', iterateType_k);
+                    % print information
+                    disp('********************************************************************')
+                    disp('Done!')
+                    disp(['iterNum: ', num2str(Info.iterNum)])
+                    disp(['terminalStatus: ', Info.terminalStatus])                    
+                    disp(['elapsedTime: ', num2str(Info.time), ' seconds'])
+                    disp(['rho: ', num2str(full(Info.rho))])
+                    disp(['solution type: ', Info.iterateType])
                     break
                 end
                 % STEP 4: inner loop iteration (Algorithm 1)
-                [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, innerLoopFlag] = ...
-                    self.innerLoopIteration(hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k);
+                [hat_x_kNext, bar_lambda_kNext, bar_mu_kNext, r_kNext, epsilon_kNext, sigma_kNext, iterateType_kNext, innerLoopFlag] = ...
+                    self.innerLoopIteration(hat_x_k, bar_lambda_k, bar_mu_k, r_k, epsilon_k, sigma_k, iterateType_k);
                 % STEP 5: prepare for next outer iteration
                 hat_x_k = hat_x_kNext;
                 bar_lambda_k = bar_lambda_kNext;
@@ -438,6 +488,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                 r_k = r_kNext;
                 epsilon_k = epsilon_kNext;
                 sigma_k = sigma_kNext;
+                iterateType_k = iterateType_kNext;
             end
             
         end
