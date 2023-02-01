@@ -22,7 +22,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
             %            'rho'(natural residual of KKT system),  'psi'(L2 norm constraint violation),
             %            'qp_H', 'qp_A'(Hessian and Jacobian matrix used in qpoases solver)
         Option % struct, solver option
-        FunObj % % struct, CasADi function object 
+        FunObj % struct, CasADi function object 
                % with field 'f', 'h', 'g'
                %            'fx', 'hx', 'gx'
                %            'L', 'Lx', 'Lxx'
