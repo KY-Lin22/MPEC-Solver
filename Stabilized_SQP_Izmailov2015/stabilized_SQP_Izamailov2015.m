@@ -78,17 +78,15 @@ classdef stabilized_SQP_Izamailov2015 < handle
             self.NLP.rho = norm(self.NLP.Lx) + self.NLP.psi;
             
             % symbolic representation of matrix used in qpoases solver (sparse)
-            qp_H = [self.NLP.Lxx,                                          SX.zeros(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
-                   SX.zeros(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim), self.NLP.sigma * SX.eye(self.NLP.hDim + self.NLP.gDim)];           
-            self.NLP.qp_H = qp_H;
-            
+            qp_H = [self.NLP.Lxx,                                          SX(self.NLP.xDim, self.NLP.hDim + self.NLP.gDim);...
+                   SX(self.NLP.hDim + self.NLP.gDim, self.NLP.xDim), self.NLP.sigma * SX.eye(self.NLP.hDim + self.NLP.gDim)];           
+            self.NLP.qp_H = qp_H;           
             qp_A = [[self.NLP.hx; self.NLP.gx], -self.NLP.sigma * SX.eye(self.NLP.hDim + self.NLP.gDim)];
             self.NLP.qp_A = qp_A;
             
             % display sparsity pattern
             disp('qp_H sparsity pattern: ')
-            self.NLP.qp_H.sparsity().spy();
-            
+            self.NLP.qp_H.sparsity().spy();           
             disp('qp_A sparsity pattern: ')
             self.NLP.qp_A.sparsity().spy();
             
@@ -135,12 +133,12 @@ classdef stabilized_SQP_Izamailov2015 < handle
             qp_options = struct();     
             qp_options.error_on_fail = false;
             qp_options.printLevel = 'none'; % 'none', 'low', 'medium', 'high' (see qpoases manual sec 5.2)
-            qp_options.hessian_type = 'semidef';% 'unknown', 'posdef', 'semidef', 'indef', 'zero', 'identity' (see qpoases manual sec 4.4, 4.5)
+            qp_options.hessian_type = 'indef';% 'unknown', 'posdef', 'semidef', 'indef', 'zero', 'identity' (see qpoases manual sec 4.4, 4.5)
 %             qp_options.enableInertiaCorrection = true;
 
 %             qp_options.enableRegularisation = true; %(this three option corresponds to unbounded QP, see qpoases manual sec 4.5)            
-            qp_options.enableFlippingBounds = true;          
-            qp_options.enableFarBounds = true;
+%             qp_options.enableFlippingBounds = true;          
+%             qp_options.enableFarBounds = true;
             
             self.FunObj.qp_solver = casadi.conic('qp_solver', 'qpoases', qp, qp_options);            
             
@@ -279,7 +277,7 @@ classdef stabilized_SQP_Izamailov2015 < handle
                     dmu = qp_solution.x(self.NLP.xDim + self.NLP.hDim + 1 : end, 1) - bar_mu_k;
                     
                     qp_status = self.FunObj.qp_solver.stats.return_status;
-                    disp(['inner iter j = ', num2str(j), ' --> qp return status: ', qp_status])
+                    disp(['inner iter j = ', num2str(j), ' --> qpoases return status: ', qp_status])
                     if strcmp(qp_status, 'Successful return.')
                         % step 2: check whether we can obtain a new iterate with full step along the direction
                         check_lambda =  (full(min(bar_lambda_k + dlambda)) >= self.Option.bar_lambdaMin) && ...
@@ -405,7 +403,6 @@ classdef stabilized_SQP_Izamailov2015 < handle
                  end
                            
             end
-
             
         end
         
