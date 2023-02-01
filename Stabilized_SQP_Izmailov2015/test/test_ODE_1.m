@@ -5,9 +5,8 @@ clc
 addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
 import casadi.*
 
-timeStep = 0.05;
-nStages = 20; 
-s = 2e-1; % slack 
+timeStep = 0.02;
+nStages = 50; 
 
 %% Dynamics
 % dynamics variables
@@ -43,7 +42,7 @@ optVarBounds_func = Function('optVarBounds_func', {x, u}, {optVarBounds}, {'x', 
 
 %% OCPEC
 % specify initial and end state, cost ref and weight matrix
-InitState = [-3; -3];
+InitState = [-1; -3];
 EndState = [0; 0];
 
 StageCost.xRef = repmat(EndState, 1, nStages);
