@@ -2,8 +2,8 @@ classdef NIPMPEC_CasADi < handle
     %implementation of our previous research to the general MPEC problem
     %formulation:
     % min L(x,p)
-    %s.t. G(x,p)>= 0
-    %     C(x,p)= 0
+    %s.t. G(x,p) >= 0
+    %     C(x,p) = 0
     %     p \in SOL([l, u], K(x,p))
     %
     %Refer to the following paper dedicated to solve the continuous time optimal 
@@ -45,11 +45,56 @@ classdef NIPMPEC_CasADi < handle
     methods
         function self = NIPMPEC_CasADi(MPEC)
             %NIPMPEC_CasADi: Construct an instance of this class
-            %   Detailed explanation goes here
+            % Syntax:
+            %          self = NIPMPEC_CasADi(MPEC)
+            % Argument:
+            %          MPEC: struct, containing MPEC problem formulation, 
+            %                with field: 
+            %                'x' -- SX symbolic variable, optimal variable
+            %                'p' -- SX symbolic variable, algebraic variable
+            %                'L' -- SX symbolic variable, cost function L(x,p)
+            %                'G' -- SX symbolic variable, inequality constraint G(x,p) >= 0
+            %                'C' -- SX symbolic variable, equality constraint C(x,p) = 0
+            %                'K' -- SX symbolic variable, function used to define Boxed Variational Inequality(BVI) for p
+            %                'l' -- double, lower bounds for p
+            %                'u' -- double, upper bounds for p
+            %
+            % Output:
+            %          self: instance of this class
+            
             % import CasADi to workspace
             addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
             import casadi.* 
             %% check input
+            if size(MPEC.x, 2) ~= 1
+                error('MPEC.x should be a column vector')
+            end
+            if size(MPEC.p, 2) ~= 1
+                error('MPEC.p should be a column vector')
+            end
+            if ~all(size(MPEC.L) == [1, 1])
+                error('MPEC.L should be a scale function')
+            end
+            if size(MPEC.G, 2) ~= 1
+                error('MPEC.G should be a column function')
+            end     
+            if size(MPEC.C, 2) ~= 1
+                error('MPEC.C should be a column function')
+            end
+            if ~all(size(MPEC.K) == size(MPEC.p))
+                error('MPEC.K should have the same dimension as MPEC.p')
+            end
+            MPEC.l = double(MPEC.l);
+            MPEC.u = double(MPEC.u);
+            if ~all(size(MPEC.l) == size(MPEC.p))
+                error('MPEC.l should have the same dimension as MPEC.p')
+            end
+            if ~all(size(MPEC.u) == size(MPEC.p))
+                error('MPEC.u should have the same dimension as MPEC.p')
+            end
+            if ~all(MPEC.l <= MPEC.u)
+                error('MPEC.l should less than or equal to MPEC.u')
+            end
             
             %% initialize properties: MPEC
             % symbolic representation of problem variable and function

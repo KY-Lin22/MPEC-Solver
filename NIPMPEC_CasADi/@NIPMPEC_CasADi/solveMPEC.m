@@ -1,8 +1,42 @@
 function [solution, Info] = solveMPEC(self, Var_Init)
-%UNTITLED17 Summary of this function goes here
-%   Detailed explanation goes here
-
+%solveMPEC
+%   solving MPEC problem
+% Syntax:
+%          [solution, Info] = solveMPEC(self, Var_Init)
+%          [solution, Info] = self.solveMPEC(Var_Init)
+% Argument:
+%          Var_Init: struct, containing initial guess for solver, 
+%                    with field:
+%                    'x' -- double, Dim.x X 1
+%                    'p' -- double, Dim.p X 1
+%                    'w' -- double, Dim.w X 1
+%                    'sigma' -- double, Dim.sigma X 1
+%                    'eta'   -- double, Dim.eta X 1
+%                    'gamma' -- double, Dim.gamma X 1
+% Output:
+%          solution: struct, solution found by solver
+%          Info: struct, record the iteration information
+%
 %% check input
+Dim = self.MPEC.Dim;
+if ~all(size(Var_Init.x) == [Dim.x, 1])
+    error(['Dimemsion of Var_Init.x should be: ', num2str(Dim.x), ' X ' num2str(1)])
+end
+if ~all(size(Var_Init.p) == [Dim.p, 1])
+    error(['Dimemsion of Var_Init.p should be: ', num2str(Dim.p), ' X ' num2str(1)])
+end
+if ~all(size(Var_Init.w) == [Dim.w, 1])
+    error(['Dimemsion of Var_Init.w should be: ', num2str(Dim.w), ' X ' num2str(1)])
+end
+if ~all(size(Var_Init.sigma) == [Dim.sigma, 1])
+    error(['Dimemsion of Var_Init.sigma should be: ', num2str(Dim.sigma), ' X ' num2str(1)])
+end
+if ~all(size(Var_Init.eta) == [Dim.eta, 1])
+    error(['Dimemsion of Var_Init.eta should be: ', num2str(Dim.eta), ' X ' num2str(1)])
+end
+if ~all(size(Var_Init.gamma) == [Dim.gamma, 1])
+    error(['Dimemsion of Var_Init.gamma should be: ', num2str(Dim.gamma), ' X ' num2str(1)])
+end
 
 %%
 Option = self.Option;
@@ -108,7 +142,7 @@ for k = 1 : maxIterNum + 1
     %% step 2: Checking Termination
     terminalCond.sz = ((s == sEnd) && (z == zEnd));
     terminalCond.KKT_T = (KKT_Error.Total <= Tol.KKT_Error_Total);
-    terminalCond.KKT_F = (KKT_Error.Feasibility <= Tol.KKT_Error_Feasibility); % later transfer to (F <= Tol) && (active iteration counter)
+    terminalCond.KKT_F = (KKT_Error.Feasibility <= Tol.KKT_Error_Feasibility); 
     terminalCond.KKT_S = (KKT_Error.Stationarity <= Tol.KKT_Error_Stationarity);     
     terminalCond.maxIterNum = (k == (maxIterNum + 1));
     terminalCond.LSwithoutFRP = (FailureFlag.LineSearch && ~employFRP);
@@ -127,7 +161,7 @@ for k = 1 : maxIterNum + 1
     
     %% step 3: Checking Exit Flag
     if exitFlag
-        % return solution (i.e.,iterate)
+        % return solution (i.e.,Var)
         Record.iterNum = k - 1; 
         Record.terminalStatus = terminalStatus;     
         Record.terminalCond = terminalCond;
