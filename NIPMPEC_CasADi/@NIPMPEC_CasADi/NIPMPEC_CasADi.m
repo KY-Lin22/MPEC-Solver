@@ -66,26 +66,69 @@ classdef NIPMPEC_CasADi < handle
             addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
             import casadi.* 
             %% check input
-            if size(MPEC.x, 2) ~= 1
-                error('MPEC.x should be a column vector')
+            % check x
+            if isempty(MPEC.x)
+                error('please specify optimal variable MPEC.x')
+            else
+                if size(MPEC.x, 2) ~= 1
+                    error('MPEC.x should be a column vector')
+                end
             end
-            if size(MPEC.p, 2) ~= 1
-                error('MPEC.p should be a column vector')
+            % check p
+            if isempty(MPEC.p)
+                MPEC.p = SX.sym('p', 0, 1);
+            else
+                if size(MPEC.p, 2) ~= 1
+                    error('MPEC.p should be a column vector')
+                end
             end
-            if ~all(size(MPEC.L) == [1, 1])
-                error('MPEC.L should be a scale function')
+            % check L
+            if isempty(MPEC.L)
+                error('please specify cost function MPEC.L')
+            else
+                if ~all(size(MPEC.L) == [1, 1])
+                    error('MPEC.L should be a scale function')
+                end
             end
-            if size(MPEC.G, 2) ~= 1
-                error('MPEC.G should be a column function')
-            end     
-            if size(MPEC.C, 2) ~= 1
-                error('MPEC.C should be a column function')
+            % check G
+            if isempty(MPEC.G)
+                MPEC.G = SX.sym('G', 0, 1);
+            else
+                if size(MPEC.G, 2) ~= 1
+                    error('MPEC.G should be a column function')
+                end
+            end  
+            % check C
+            if isempty(MPEC.C)
+                MPEC.C = SX.sym('C', 0, 1);
+            else
+                if size(MPEC.C, 2) ~= 1
+                    error('MPEC.C should be a column function')
+                end
             end
-            if ~all(size(MPEC.K) == size(MPEC.p))
-                error('MPEC.K should have the same dimension as MPEC.p')
+            % check K
+            if isempty(MPEC.K)
+                if size(MPEC.p, 1) == 0
+                    MPEC.K = SX.sym('K', 0, 1);                   
+                else
+                    error('please specify MPEC.K')
+                end
+            else
+                if ~all(size(MPEC.K) == size(MPEC.p))
+                    error('MPEC.K should have the same dimension as MPEC.p')
+                end
             end
-            MPEC.l = double(MPEC.l);
-            MPEC.u = double(MPEC.u);
+            % check l and u
+            if isempty(MPEC.l)
+                MPEC.l = zeros(0, 1); 
+            else
+                MPEC.l = double(MPEC.l);
+            end
+            if isempty(MPEC.u)
+                MPEC.u = zeros(0, 1);
+            else
+                MPEC.u = double(MPEC.u);
+            end          
             if ~all(size(MPEC.l) == size(MPEC.p))
                 error('MPEC.l should have the same dimension as MPEC.p')
             end
