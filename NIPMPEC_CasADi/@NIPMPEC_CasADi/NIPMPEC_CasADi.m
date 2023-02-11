@@ -55,7 +55,7 @@ classdef NIPMPEC_CasADi < handle
             %                'L' -- SX symbolic variable, cost function L(x,p)
             %                'G' -- SX symbolic variable, inequality constraint G(x,p) >= 0
             %                'C' -- SX symbolic variable, equality constraint C(x,p) = 0
-            %                'K' -- SX symbolic variable, function used to define Boxed Variational Inequality(BVI) for p
+            %                'K' -- SX symbolic variable, function used to define Box constraint Variational Inequality(BVI) for p
             %                'l' -- double, lower bounds for p
             %                'u' -- double, upper bounds for p
             %

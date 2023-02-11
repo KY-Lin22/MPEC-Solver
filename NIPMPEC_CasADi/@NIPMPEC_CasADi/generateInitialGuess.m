@@ -11,7 +11,17 @@ disp('Generating Initial Guess...')
 
 %% generate initial guess for primal variable
 Var.x = zeros(Dim.x, 1);
-Var.p = 1/2 * (self.MPEC.l + self.MPEC.u);
+p = zeros(Dim.p, 1);
+for i = 1 : Dim.p
+    if (self.MPEC.l(i) == 0) && (self.MPEC.u(i) == Inf)
+        % nonlinear complementary problem
+        p(i, 1) = 1; % p > 0
+    else
+        % box constraint variation inequality
+        p(i, 1) = 1/2 * (self.MPEC.l(i) + self.MPEC.u(i)); % l < = p < = u
+    end
+end
+Var.p = p;
 K = self.FunObj.K(Var.x, Var.p);
 Var.w = full(K);
 
