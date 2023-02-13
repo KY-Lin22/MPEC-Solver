@@ -63,7 +63,6 @@ classdef NIPMPEC_CasADi < handle
             %          self: instance of this class
             
             % import CasADi to workspace
-            addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
             import casadi.* 
             %% check and poblish input
             MPEC = self.checkInput(MPEC);
