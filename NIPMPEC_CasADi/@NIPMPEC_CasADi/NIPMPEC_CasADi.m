@@ -66,80 +66,9 @@ classdef NIPMPEC_CasADi < handle
             addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
             import casadi.* 
             %% check input
-            % check x
-            if isempty(MPEC.x)
-                error('please specify optimal variable MPEC.x')
-            else
-                if size(MPEC.x, 2) ~= 1
-                    error('MPEC.x should be a column vector')
-                end
-            end
-            % check p
-            if isempty(MPEC.p)
-                MPEC.p = SX.sym('p', 0, 1);
-            else
-                if size(MPEC.p, 2) ~= 1
-                    error('MPEC.p should be a column vector')
-                end
-            end
-            % check L
-            if isempty(MPEC.L)
-                error('please specify cost function MPEC.L')
-            else
-                if ~all(size(MPEC.L) == [1, 1])
-                    error('MPEC.L should be a scale function')
-                end
-            end
-            % check G
-            if isempty(MPEC.G)
-                MPEC.G = SX.sym('G', 0, 1);
-            else
-                if size(MPEC.G, 2) ~= 1
-                    error('MPEC.G should be a column function')
-                end
-            end  
-            % check C
-            if isempty(MPEC.C)
-                MPEC.C = SX.sym('C', 0, 1);
-            else
-                if size(MPEC.C, 2) ~= 1
-                    error('MPEC.C should be a column function')
-                end
-            end
-            % check K
-            if isempty(MPEC.K)
-                if size(MPEC.p, 1) == 0
-                    MPEC.K = SX.sym('K', 0, 1);                   
-                else
-                    error('please specify MPEC.K')
-                end
-            else
-                if ~all(size(MPEC.K) == size(MPEC.p))
-                    error('MPEC.K should have the same dimension as MPEC.p')
-                end
-            end
-            % check l and u
-            if isempty(MPEC.l)
-                MPEC.l = zeros(0, 1); 
-            else
-                MPEC.l = double(MPEC.l);
-            end
-            if isempty(MPEC.u)
-                MPEC.u = zeros(0, 1);
-            else
-                MPEC.u = double(MPEC.u);
-            end          
-            if ~all(size(MPEC.l) == size(MPEC.p))
-                error('MPEC.l should have the same dimension as MPEC.p')
-            end
-            if ~all(size(MPEC.u) == size(MPEC.p))
-                error('MPEC.u should have the same dimension as MPEC.p')
-            end
-            if ~all(MPEC.l <= MPEC.u)
-                error('MPEC.l should less than or equal to MPEC.u')
-            end
+            MPEC = self.checkInput(MPEC);
             
-            %% initialize properties: MPEC
+            %% initialize properties: MPEC       
             % symbolic representation of problem variable and function
             Dim = struct('x', size(MPEC.x, 1), 'p', size(MPEC.p, 1), 'w', size(MPEC.p, 1));         
             self.MPEC = struct('Dim', Dim,...
@@ -211,7 +140,7 @@ classdef NIPMPEC_CasADi < handle
             %% initialize properties: Option
             self.Option = self.createOption();                        
             
-            %% initialize properties: FunObj (collect in a function latter)
+            %% initialize properties: FunObj
             self.FunObj = self.createFunObj();
             
         end
@@ -221,6 +150,8 @@ classdef NIPMPEC_CasADi < handle
     %% Other Methods for NIPMPEC_CasADi   
     methods
         %%
+        MPEC = checkInput(self, MPEC)       
+        
         Option = createOption(self)
         
         FunObj = createFunObj(self)
