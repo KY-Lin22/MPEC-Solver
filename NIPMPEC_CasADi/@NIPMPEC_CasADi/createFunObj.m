@@ -2,7 +2,6 @@ function FunObj = createFunObj(self)
 %UNTITLED15 Summary of this function goes here
 %   Detailed explanation goes here
 
-addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
 import casadi.*
 %% function evaluation
 FunObj.K = Function('K',...
