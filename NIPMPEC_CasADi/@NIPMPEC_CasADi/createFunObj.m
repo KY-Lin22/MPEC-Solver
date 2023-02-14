@@ -22,50 +22,50 @@ FunObj.PHI = Function('PHI',...
     {'x', 'p', 'w', 's'}, {'PHI'});
 
 %% Jacobian evaluation
-Lx = jacobian(self.MPEC.L, self.MPEC.x);
-Lp = jacobian(self.MPEC.L, self.MPEC.p);
-Lw = jacobian(self.MPEC.L, self.MPEC.w);
+Lx_formula = jacobian(self.MPEC.L, self.MPEC.x);
+Lp_formula = jacobian(self.MPEC.L, self.MPEC.p);
+Lw_formula = jacobian(self.MPEC.L, self.MPEC.w);
 FunObj.L_grad = Function('L_grad',...
-    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Lx, Lp, Lw},...
+    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Lx_formula, Lp_formula, Lw_formula},...
     {'x', 'p', 'w'},{'Lx', 'Lp', 'Lw'});
 
-Gx = jacobian(self.MPEC.G, self.MPEC.x);
-Gp = jacobian(self.MPEC.G, self.MPEC.p);
-Gw = jacobian(self.MPEC.G, self.MPEC.w);
+Gx_formula = jacobian(self.MPEC.G, self.MPEC.x);
+Gp_formula = jacobian(self.MPEC.G, self.MPEC.p);
+Gw_formula = jacobian(self.MPEC.G, self.MPEC.w);
 FunObj.G_grad = Function('G_grad',...
-    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Gx, Gp, Gw},...
+    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Gx_formula, Gp_formula, Gw_formula},...
     {'x', 'p', 'w'},{'Gx', 'Gp', 'Gw'});
 
-Cx = jacobian(self.MPEC.C, self.MPEC.x);
-Cp = jacobian(self.MPEC.C, self.MPEC.p);
-Cw = jacobian(self.MPEC.C, self.MPEC.w);
+Cx_formula = jacobian(self.MPEC.C, self.MPEC.x);
+Cp_formula = jacobian(self.MPEC.C, self.MPEC.p);
+Cw_formula = jacobian(self.MPEC.C, self.MPEC.w);
 FunObj.C_grad = Function('C_grad',...
-    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Cx, Cp, Cw},...
+    {self.MPEC.x, self.MPEC.p, self.MPEC.w},{Cx_formula, Cp_formula, Cw_formula},...
     {'x', 'p', 'w'},{'Cx', 'Cp', 'Cw'});
 
-PHIx = jacobian(self.MPEC.PHI, self.MPEC.x);
-PHIp = jacobian(self.MPEC.PHI, self.MPEC.p);
-PHIw = jacobian(self.MPEC.PHI, self.MPEC.w);
+PHIx_formula = jacobian(self.MPEC.PHI, self.MPEC.x);
+PHIp_formula = jacobian(self.MPEC.PHI, self.MPEC.p);
+PHIw_formula = jacobian(self.MPEC.PHI, self.MPEC.w);
 FunObj.PHI_grad = Function('PHI_grad',...
-    {self.MPEC.x, self.MPEC.p, self.MPEC.w, self.MPEC.s},{PHIx, PHIp, PHIw},...
+    {self.MPEC.x, self.MPEC.p, self.MPEC.w, self.MPEC.s},{PHIx_formula, PHIp_formula, PHIw_formula},...
     {'x', 'p', 'w', 's'},{'PHIx', 'PHIp', 'PHIw'});
 
 %% Hessian evaluation
 % Lagrangian Hessian
-LAG = self.MPEC.L - self.MPEC.sigma' * self.MPEC.G ...
+LAG_formula = self.MPEC.L - self.MPEC.sigma' * self.MPEC.G ...
     + self.MPEC.eta' * self.MPEC.C ...
     - self.MPEC.gamma' * self.MPEC.PHI;
-[LAG_hessian, ~] = hessian(LAG, [self.MPEC.x; self.MPEC.p; self.MPEC.w]);
+[LAG_hessian_formula, ~] = hessian(LAG_formula, [self.MPEC.x; self.MPEC.p; self.MPEC.w]);
 FunObj.LAG_hessian = Function('LAG_hessian',...
     {self.MPEC.x, self.MPEC.p, self.MPEC.w, self.MPEC.sigma, self.MPEC.eta, self.MPEC.gamma, self.MPEC.s},...
-    {LAG_hessian},...
+    {LAG_hessian_formula},...
     {'x', 'p', 'w', 'sigma', 'eta', 'gamma', 's'},...
     {'LAG_hessian'});
 % cost function Hessian
-[L_hessian, ~] = hessian(self.MPEC.L, [self.MPEC.x; self.MPEC.p; self.MPEC.w]);
+[L_hessian_formula, ~] = hessian(self.MPEC.L, [self.MPEC.x; self.MPEC.p; self.MPEC.w]);
 FunObj.L_hessian = Function('L_hessian',...
     {self.MPEC.x, self.MPEC.p, self.MPEC.w},...
-    {L_hessian},...
+    {L_hessian_formula},...
     {'x', 'p', 'w'},...
     {'L_hessian'});
 
@@ -77,41 +77,41 @@ sqrt_abz = sqrt(a^2 + b^2 + self.MPEC.z^2);
 PSI = sqrt_abz - a - b;
 PSIa = a/sqrt_abz - 1;
 PSIb = b/sqrt_abz - 1;
-FB = Function('FB', {a, b, self.MPEC.z}, {PSI}, {'dualVar', 'ineq', 'z'}, {'PSI'});
-FB_grad = Function('FB_grad', {a, b, self.MPEC.z}, {PSIa, PSIb}, {'dualVar', 'ineq', 'z'}, {'PSIdualvar', 'PSIineq'});
+FB = Function('FB', {a, b, self.MPEC.z}, {PSI}, {'a', 'b', 'z'}, {'PSI'});
+FB_grad = Function('FB_grad',{a, b, self.MPEC.z}, {PSIa, PSIb}, {'a', 'b', 'z'}, {'PSIa', 'PSIb'});
 
 % FB function for G
 G = SX.sym('G', self.MPEC.Dim.sigma, 1);
-PSIg = SX.sym('PSIg', self.MPEC.Dim.sigma, 1);
-PSIgSigma_diagVec = SX.sym('PSIgSigma_diagVec', self.MPEC.Dim.sigma, 1);% diagonal elements vector of PSIgSigma
-PSIgG_diagVec = SX.sym('PSIgG_diagVec', self.MPEC.Dim.sigma, 1);% diagonal elements vector of PSIgG
+PSIg_formula = SX.sym('PSIg_formula', self.MPEC.Dim.sigma, 1);
+PSIgSigma_diagVec_formula = SX.sym('PSIgSigma_diagVec_formula', self.MPEC.Dim.sigma, 1);% diagonal elements vector of PSIgSigma
+PSIgG_diagVec_formula = SX.sym('PSIgG_diagVec_formula', self.MPEC.Dim.sigma, 1);% diagonal elements vector of PSIgG
 for i = 1 : self.MPEC.Dim.sigma
-    PSIg(i, 1) = FB(self.MPEC.sigma(i, 1), G(i, 1), self.MPEC.z);
-    [PSIgSigma_diagVec(i, 1), PSIgG_diagVec(i, 1)] = FB_grad(self.MPEC.sigma(i, 1), G(i, 1), self.MPEC.z);
+    PSIg_formula(i, 1) = FB(self.MPEC.sigma(i, 1), G(i, 1), self.MPEC.z);
+    [PSIgSigma_diagVec_formula(i, 1), PSIgG_diagVec_formula(i, 1)] = FB_grad(self.MPEC.sigma(i, 1), G(i, 1), self.MPEC.z);
 end
 FunObj.FB_G = Function('FB_G',...
-    {self.MPEC.sigma, G, self.MPEC.z}, {PSIg},...
+    {self.MPEC.sigma, G, self.MPEC.z}, {PSIg_formula},...
     {'sigma', 'G', 'z'}, {'PSIg'});
 FunObj.FB_G_grad = Function('FB_G_grad',...
-    {self.MPEC.sigma, G, self.MPEC.z}, {PSIgSigma_diagVec, PSIgG_diagVec},...
+    {self.MPEC.sigma, G, self.MPEC.z}, {PSIgSigma_diagVec_formula, PSIgG_diagVec_formula},...
     {'sigma', 'G', 'z'}, {'PSIgSigma_diagVec', 'PSIgG_diagVec'});
 
 % FB function for PHI
 PHI = SX.sym('PHI', self.MPEC.Dim.gamma, 1);
-PSIphi = SX.sym('PSIphi', self.MPEC.Dim.gamma, 1);
-PSIphiGamma_diagVec = SX.sym('PSIphiGamma_diagVec', self.MPEC.Dim.gamma, 1);% diagonal elements vector of PSIphiGamma
-PSIphiPHI_diagVec = SX.sym('PSIphiPHI_diagVec', self.MPEC.Dim.gamma, 1);% diagonal elements vector of PSIphiPHI
+PSIphi_formula = SX.sym('PSIphi_formula', self.MPEC.Dim.gamma, 1);
+PSIphiGamma_diagVec_formula = SX.sym('PSIphiGamma_diagVec_formula', self.MPEC.Dim.gamma, 1);% diagonal elements vector of PSIphiGamma
+PSIphiPHI_diagVec_formula = SX.sym('PSIphiPHI_diagVec_formula', self.MPEC.Dim.gamma, 1);% diagonal elements vector of PSIphiPHI
 for i = 1 : self.MPEC.Dim.gamma
-    PSIphi(i, 1) = FB(self.MPEC.gamma(i, 1), PHI(i, 1), self.MPEC.z);
-    [PSIphiGamma_diagVec(i, 1), PSIphiPHI_diagVec(i, 1)] = FB_grad(self.MPEC.gamma(i, 1), PHI(i, 1), self.MPEC.z);
+    PSIphi_formula(i, 1) = FB(self.MPEC.gamma(i, 1), PHI(i, 1), self.MPEC.z);
+    [PSIphiGamma_diagVec_formula(i, 1), PSIphiPHI_diagVec_formula(i, 1)] = FB_grad(self.MPEC.gamma(i, 1), PHI(i, 1), self.MPEC.z);
 end
 FunObj.FB_PHI = Function('FB_PHI',...
-    {self.MPEC.gamma, PHI, self.MPEC.z}, {PSIphi},...
+    {self.MPEC.gamma, PHI, self.MPEC.z}, {PSIphi_formula},...
     {'gamma', 'PHI', 'z'}, {'PSIphi'});
 FunObj.FB_PHI_grad = Function('FB_PHI_grad',...
-    {self.MPEC.gamma, PHI, self.MPEC.z}, {PSIphiGamma_diagVec, PSIphiPHI_diagVec},...
+    {self.MPEC.gamma, PHI, self.MPEC.z}, {PSIphiGamma_diagVec_formula, PSIphiPHI_diagVec_formula},...
     {'gamma', 'PHI', 'z'}, {'PSIphiGamma_diagVec', 'PSIphiPHI_diagVec'});
-
+            
 %% Feasibility Restoration Phase
 % cost function
 FunObj.FRP_L = Function('FRP_L',...
