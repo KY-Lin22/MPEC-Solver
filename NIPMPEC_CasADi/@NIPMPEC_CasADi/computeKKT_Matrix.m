@@ -13,19 +13,26 @@ Gvar = [Jac.Gx, Jac.Gp, Jac.Gw];
 Cvar = [Jac.Cx, Jac.Cp, Jac.Cw];
 PHIvar = [Jac.PHIx, Jac.PHIp, Jac.PHIw];
 
-% D
+% diag matrix vector: D = diag(d), nu_J,  E = diag(e);
 d = -(diag(Fun.PSIgSigma) - nu_G * ones(Dim.sigma, 1))./(diag(Fun.PSIgG) - nu_G * ones(Dim.sigma, 1));
-D = diag(d);
-
-% E
+nu_J_vec = nu_J*ones(Dim.eta, 1);
 e = -(diag(Fun.PSIphiGamma) - nu_G * ones(Dim.gamma, 1))./(diag(Fun.PSIphiPHI) - nu_G * ones(Dim.gamma, 1));
-E = diag(e);
+diagVec = [d; nu_J_vec; e];
 
-% assemble KKT matrix
-KKT_Matrix.J = [D,                            zeros(Dim.sigma, Dim.eta),  zeros(Dim.sigma, Dim.gamma),  -Gvar;...
-                zeros(Dim.eta, Dim.sigma),    -nu_J * eye(Dim.eta),       zeros(Dim.eta, Dim.gamma),    Cvar;...
-                zeros(Dim.gamma, Dim.sigma),  zeros(Dim.gamma, Dim.eta),  E,                            -PHIvar;...
-                -Gvar',                       Cvar',                      -PHIvar',                     Hessian + nu_H*eye(Dim.Z)]; 
+%% assemble KKT matrix
+%J = [D,                            zeros(Dim.sigma, Dim.eta),  zeros(Dim.sigma, Dim.gamma),  -Gvar;...
+%     zeros(Dim.eta, Dim.sigma),    -nu_J * eye(Dim.eta),       zeros(Dim.eta, Dim.gamma),    Cvar;...
+%     zeros(Dim.gamma, Dim.sigma),  zeros(Dim.gamma, Dim.eta),  E,                            -PHIvar;...
+%     -Gvar',                       Cvar',                      -PHIvar',                     Hessian + nu_H*eye(Dim.Z)];      
+
+J = zeros(Dim.Y, Dim.Y);
+for i = 1 : Dim.Node(3)
+    J(i, i) = diagVec(i);
+end
+J(1 : Dim.Node(3), Dim.Node(3) + 1 : Dim.Node(6)) = [-Gvar; Cvar; -PHIvar];
+J(Dim.Node(3) + 1 : Dim.Node(6), :) = [-Gvar', Cvar', -PHIvar', Hessian + nu_H*eye(Dim.Z)];
+
+KKT_Matrix.J = J;
 
 end
 
