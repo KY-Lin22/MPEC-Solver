@@ -12,14 +12,11 @@ classdef NIPMPEC_CasADi < handle
     %   Detailed explanation goes here
     
     properties
-        MPEC % struct, MPEC problem dimmension, symbolic representation, and data record, 
+        MPEC % struct, MPEC problem dimmension, symbolic representation, 
              % with field 'Dim' (variable dimension),
              %           'x'(optimal variable), 
              %           'p'(algebraic variable),
              %           'w'(auxilary variable for function K)
-             %           'sigma'(dual variable for G), 
-             %           'eta'(dual variable for C), 
-             %           'gamma'(dual variable for PHI),
              %           'l', 'u'(lower and upper bounds for p), 
              %           'K'(function used to define BVI for p), 
              %           's'(perturbed parameter for Scholtes reformulation),
@@ -28,9 +25,6 @@ classdef NIPMPEC_CasADi < handle
              %           'G'(inequality constraint), 
              %           'C'(equality constraint), 
              %           'PHI'(Scholtes reformulation inequalities PHI >= 0)
-             %           'ZRef'(reference primal variable in FRP cost function), 
-             %           'ZWeight'(weight matrix in FRP cost function),
-             %           'FRP_L'(FRP cost function),
              %           
         Option % struct, solver option
         FunObj  % struct, CasADi function object 
@@ -73,8 +67,7 @@ classdef NIPMPEC_CasADi < handle
             self.MPEC = struct('Dim', Dim,...
                 'x', MPEC.x , 'p', MPEC.p, 'w', SX.sym('w', Dim.w, 1),...
                 'l', MPEC.l, 'u', MPEC.u, 'K', MPEC.K,...
-                's', SX.sym('s', 1, 1), 'z', SX.sym('z', 1, 1));                          
-            self.MPEC.Dim.Z = self.MPEC.Dim.x + self.MPEC.Dim.p + self.MPEC.Dim.w; 
+                's', SX.sym('s', 1, 1), 'z', SX.sym('z', 1, 1));                                     
             
             % problem reformulation: L G C
             pWeight = 0.001 * eye(self.MPEC.Dim.p);
@@ -116,25 +109,17 @@ classdef NIPMPEC_CasADi < handle
             end     
             self.MPEC.PHI = PHI;
             
-            % dual variable
+            % dim for dual variable
             self.MPEC.Dim.sigma = size(self.MPEC.G, 1);
             self.MPEC.Dim.eta = size(self.MPEC.C, 1);
-            self.MPEC.Dim.gamma = size(self.MPEC.PHI, 1);           
+            self.MPEC.Dim.gamma = size(self.MPEC.PHI, 1);                       
             
-            self.MPEC.sigma = SX.sym('sigma', self.MPEC.Dim.sigma, 1);
-            self.MPEC.eta = SX.sym('eta', self.MPEC.Dim.eta, 1);
-            self.MPEC.gamma = SX.sym('gamma', self.MPEC.Dim.gamma, 1);
-            
+            % dim sum and node
+            self.MPEC.Dim.Z = self.MPEC.Dim.x + self.MPEC.Dim.p + self.MPEC.Dim.w; 
             self.MPEC.Dim.LAMBDA = self.MPEC.Dim.sigma + self.MPEC.Dim.eta + self.MPEC.Dim.gamma;
-            self.MPEC.Dim.Node = cumsum([self.MPEC.Dim.sigma, self.MPEC.Dim.eta, self.MPEC.Dim.gamma,...
-                self.MPEC.Dim.x, self.MPEC.Dim.p, self.MPEC.Dim.w]);
             self.MPEC.Dim.Y = self.MPEC.Dim.Z + self.MPEC.Dim.LAMBDA;
-            
-            % feasibility restoration phase 
-            self.MPEC.ZRef = SX.sym('ZRef', self.MPEC.Dim.Z, 1);
-            self.MPEC.ZWeight = SX.sym('ZWeight', self.MPEC.Dim.Z, 1);
-            Z = [self.MPEC.x; self.MPEC.p; self.MPEC.w];
-            self.MPEC.FRP_L = 0.5 * (Z - self.MPEC.ZRef)' * diag(self.MPEC.ZWeight) * (Z - self.MPEC.ZRef);
+            self.MPEC.Dim.Node = cumsum([self.MPEC.Dim.sigma, self.MPEC.Dim.eta, self.MPEC.Dim.gamma,...
+                self.MPEC.Dim.x, self.MPEC.Dim.p, self.MPEC.Dim.w]);           
             
             %% initialize properties: Option
             self.Option = self.createOption();                        
@@ -159,7 +144,7 @@ classdef NIPMPEC_CasADi < handle
         
         generateInitialGuess(self)
         
-        [solution, Info] = solveMPEC(self, VarInit)
+        [solution, Info] = solveMPEC(self, Var_Init)
         
         showResult(self, Info) 
         
