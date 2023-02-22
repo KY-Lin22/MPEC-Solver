@@ -15,7 +15,7 @@ PHIvar = [Jac.PHIx, Jac.PHIp, Jac.PHIw];
 
 % diag matrix vector: D = diag(d), nu_J,  E = diag(e);
 d = -(diag(Fun.PSIgSigma) - nu_G * ones(Dim.sigma, 1))./(diag(Fun.PSIgG) - nu_G * ones(Dim.sigma, 1));
-nu_J_vec = nu_J*ones(Dim.eta, 1);
+nu_J_vec = -nu_J*ones(Dim.eta, 1);
 e = -(diag(Fun.PSIphiGamma) - nu_G * ones(Dim.gamma, 1))./(diag(Fun.PSIphiPHI) - nu_G * ones(Dim.gamma, 1));
 diagVec = [d; nu_J_vec; e];
 
