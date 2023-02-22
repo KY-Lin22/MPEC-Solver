@@ -14,10 +14,7 @@ switch mode
                 L_hessian = self.FunObj.L_hessian(Var.x, Var.p, Var.w);
                 Hessian = full(L_hessian);
             case 'GaussNewton'
-                LAGx = Jac.Lx - Var.sigma' * Jac.Gx + Var.eta' * Jac.Cx - Var.gamma' * Jac.PHIx;
-                LAGp = Jac.Lp - Var.sigma' * Jac.Gp + Var.eta' * Jac.Cp - Var.gamma' * Jac.PHIp;
-                LAGw = Jac.Lw - Var.sigma' * Jac.Gw + Var.eta' * Jac.Cw - Var.gamma' * Jac.PHIw;
-                Hessian = [LAGx, LAGp, LAGw]' * [LAGx, LAGp, LAGw];
+                Hessian = [Jac.Lx, Jac.Lp, Jac.Lw]' * [Jac.Lx, Jac.Lp, Jac.Lw];
             otherwise
                 error('specified method to compute Hessian is not supported')
         end
