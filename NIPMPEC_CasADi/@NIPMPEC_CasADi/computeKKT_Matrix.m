@@ -14,9 +14,9 @@ Cvar = [Jac.Cx, Jac.Cp, Jac.Cw];
 PHIvar = [Jac.PHIx, Jac.PHIp, Jac.PHIw];
 
 % diag matrix vector: D = diag(d), nu_J,  E = diag(e);
-d = -(diag(Fun.PSIgSigma) - nu_G * ones(Dim.sigma, 1))./(diag(Fun.PSIgG) - nu_G * ones(Dim.sigma, 1));
+d = -(Fun.PSIgSigma_diagVec - nu_G * ones(Dim.sigma, 1))./(Fun.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
 nu_J_vec = -nu_J*ones(Dim.eta, 1);
-e = -(diag(Fun.PSIphiGamma) - nu_G * ones(Dim.gamma, 1))./(diag(Fun.PSIphiPHI) - nu_G * ones(Dim.gamma, 1));
+e = -(Fun.PSIphiGamma_diagVec - nu_G * ones(Dim.gamma, 1))./(Fun.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
 diagVec = [d; nu_J_vec; e];
 
 %% assemble KKT matrix

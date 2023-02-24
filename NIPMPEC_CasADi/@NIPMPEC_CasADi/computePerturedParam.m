@@ -43,23 +43,23 @@ elseif (s_k ~= s) && (z_k == z)
     PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
     Fun_k.PSIphi = full(PSIphi_k);      
     [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma = diag(full(PSIphiGamma_diagVec_k));
-    Fun_k.PSIphiPHI = diag(full(PSIphiPHI_diagVec_k));    
+    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
+    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);    
        
 elseif (s_k == s) && (z_k ~= z)
     % only z is update, hence update function about FB
     % FB for G
     PSIg_k = self.FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
     Fun_k.PSIg = full(PSIg_k);    
-    [PSIgSigma_diagVec_k, PSIgG_k_diagVec] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
-    Fun_k.PSIgSigma = diag(full(PSIgSigma_diagVec_k));
-    Fun_k.PSIgG = diag(full(PSIgG_k_diagVec));
+    [PSIgSigma_diagVec_k, PSIgG_diagVec_k] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
+    Fun_k.PSIgSigma_diagVec = full(PSIgSigma_diagVec_k);
+    Fun_k.PSIgG_diagVec = full(PSIgG_diagVec_k);
     % FB for PHI
     PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
     Fun_k.PSIphi = full(PSIphi_k);    
     [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma = diag(full(PSIphiGamma_diagVec_k));
-    Fun_k.PSIphiPHI = diag(full(PSIphiPHI_diagVec_k));
+    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
+    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);
     
 else
     % both s and z update, hence update function about PHI and FB
@@ -69,15 +69,15 @@ else
     % FB for G
     PSIg_k = self.FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
     Fun_k.PSIg = full(PSIg_k);    
-    [PSIgSigma_diagVec_k, PSIgG_k_diagVec] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
-    Fun_k.PSIgSigma = diag(full(PSIgSigma_diagVec_k));
-    Fun_k.PSIgG = diag(full(PSIgG_k_diagVec));
+    [PSIgSigma_diagVec_k, PSIgG_diagVec_k] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
+    Fun_k.PSIgSigma_diagVec = full(PSIgSigma_diagVec_k);
+    Fun_k.PSIgG_diagVec = full(PSIgG_diagVec_k);
     % FB for PHI
     PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
     Fun_k.PSIphi = full(PSIphi_k);    
     [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma = diag(full(PSIphiGamma_diagVec_k));
-    Fun_k.PSIphiPHI = diag(full(PSIphiPHI_diagVec_k));    
+    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
+    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);    
         
 end
 
