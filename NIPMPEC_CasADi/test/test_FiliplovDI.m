@@ -110,7 +110,7 @@ Gen_InitialGuess = load('Gen_InitialGuess.mat');
 Var_Init = Gen_InitialGuess.Var;
 
 %% solving MPEC
-solver.Option.printLevel = 2;
+solver.Option.printLevel = 0;
 solver.Option.maxIterNum = 500;
 solver.Option.Tolerance.KKT_Error_Total = 1e-4;
 solver.Option.Tolerance.KKT_Error_Feasibility = 1e-6;

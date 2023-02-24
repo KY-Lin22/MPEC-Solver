@@ -14,15 +14,15 @@ J = KKT_Matrix.J;
 
 switch self.Option.linearSystemSolver
     case 'linsolve_Sym_dense'
-        % solve linear system using linsolve(dense) with 'SYM' option
+        % solve linear system using linsolve(J is dense) with 'SYM' option
         opts.SYM = true;
         dY = linsolve(J, -T, opts);     
     case 'mldivide_dense'
-        % solve linear system using mldivide(dense)
+        % solve linear system using mldivide(J is dense)
         dY = J\(-T);
     case 'mldivide_sparse'
-        % solve linear system using mldivide(sparse)
-        dY = (sparse(J))\(-T);
+        % solve linear system using mldivide(J is sparse)
+        dY = J\(-T);
     case 'pinv'
         % solve linear system using pinv
         dY = pinv(J)*(-T);
