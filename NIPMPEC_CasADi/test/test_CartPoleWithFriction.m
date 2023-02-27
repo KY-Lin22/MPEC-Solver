@@ -7,51 +7,59 @@ addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
 import casadi.*
 
 timeStep = 0.01;
-nStages = 100;
-x_Dim = 2;
+nStages = 400;
+x_Dim = 4;
 tau_Dim = 1;
 p_Dim = 1;
-InitState = [-1/2; -1];
-RefState = [0; 0];
-EndState = [0; 0];
+InitState = [1; 0/180*pi; 0; 0];
+RefState = [1; 180/180*pi; 0; 0];
+EndState = [1; 180/180*pi; 0; 0];
 
 x = SX.sym('x', x_Dim, 1);
 tau = SX.sym('tau', tau_Dim, 1);
 p = SX.sym('p', p_Dim, 1); 
 
 % dynamics
-A = [1, -3; ...
-    -8, 10];
-B = [-3;...
-    -1];
-F = [4;...
-    8];
-f = A * x + B * p + F * tau; % xDot = f(x, tau, p)
+mass = [1; 0.1];
+linkLength = 1;
+g = 9.8;
+
+M = [mass(1) + mass(2),                 mass(2) * linkLength * cos(x(2));...
+     mass(2) * linkLength * cos(x(2)),  mass(2) * linkLength^2];
+C = [0,   -mass(2) * linkLength * x(4) * sin(x(2));...
+     0,   0]; 
+G = [0;...
+     -mass(2) * g * linkLength * sin(x(2))];
+Bu = [tau(1);...
+      0]; 
+P = [p(1);...
+     0]; % friction bewteen cart and ground  
+H = G + Bu + P - C * [x(3); x(4)];
+f = [x(3:4);...
+    inv(M)*H];% xDot = f(x, tau, p)
 f_Fun = Function('f_Fun', {x, tau, p}, {f}, {'x', 'tau', 'p'}, {'f'});
 
 % equilibrium constraint
-eqlbm.l = -1;
-eqlbm.u = 1;
-C = [1, -3];
-D = 5;
-E = 3;
-eqlbm.K = C * x + D * p + E * tau;
+eqlbm.l = -2;
+eqlbm.u = 2;
+eqlbm.K = x(3);
 K_Fun = Function('K_Fun', {x, tau, p}, {eqlbm.K}, {'x', 'tau', 'p'}, {'K'});
 
 % cost function
-xWeight = [20; 20];
+xWeight_stage = [1; 100; 1; 1];
 tauWeight = 1;
-L_stageCost = 0.5*(x - RefState)'*diag(xWeight)*(x - RefState) + 0.5*tau'*diag(tauWeight)*tau;
+L_stageCost = 0.5*(x - RefState)'*diag(xWeight_stage)*(x - RefState) + 0.5*tau'*diag(tauWeight)*tau;
 L_stageCost_Fun = Function('L_stageCost_Fun', {x, tau, p}, {L_stageCost}, {'x', 'tau', 'p'}, {'L_stageCost'});
 
-L_terminalCost = 0.5*(x - EndState)'*diag(xWeight)*(x - EndState);
+xWeight_terminal = [1; 100; 10; 20];
+L_terminalCost = 0.5*(x - EndState)'*diag(xWeight_terminal)*(x - EndState);
 L_terminalCost_Fun = Function('L_terminalCost_Fun', {x, tau, p}, {L_terminalCost}, {'x', 'tau', 'p'}, {'L_terminalCost'});
 
 % inequality constraint
-x_Max = [2; 2];
-x_Min = [-2; -2];
-tau_Max = 2;
-tau_Min = -2;
+x_Max = [5; 240/180*pi; 20; 20];
+x_Min = [0; -240/180*pi; -20; -20];
+tau_Max = 30;
+tau_Min = -30;
 G_formula =...
     [x_Max - x;...
     x - x_Min;...
@@ -75,6 +83,7 @@ K_Dim = size(eqlbm.K, 1);
 K = SX.sym('K', K_Dim, nStages); % init function K
 l = repmat(eqlbm.l, 1, nStages);
 u = repmat(eqlbm.u, 1, nStages);
+
 for n = 1 : nStages
     if n == 1
         x_nPrev = InitState;
@@ -117,13 +126,13 @@ MPEC.K = reshape(K, K_Dim * nStages, 1);
 solver = NIPMPEC_CasADi(MPEC);
 
 solver.showInfo();
-
+%%
 solver.generateInitialGuess();
 Gen_InitialGuess = load('Gen_InitialGuess.mat');
 Var_Init = Gen_InitialGuess.Var;
 
 %% solving MPEC
-solver.Option.printLevel = 0;
+solver.Option.printLevel = 2;
 solver.Option.maxIterNum = 500;
 solver.Option.Tolerance.KKT_Error_Total = 1e-2;
 solver.Option.Tolerance.KKT_Error_Feasibility = 1e-4;
@@ -135,7 +144,7 @@ solver.Option.RegularParam.nu_G = 1e-7;
 solver.Option.RegularParam.nu_H = 0;
 solver.Option.linearSystemSolver = 'mldivide_sparse'; % 'linsolve_Sym_dense', 'mldivide_dense', 'mldivide_sparse', 'pinv'
 
-solver.Option.LineSearch.stepSize_Min = 0.001;
+solver.Option.LineSearch.stepSize_Min = 0.01;
 solver.Option.employFeasibilityRestorationPhase = true;
 
 solver.Option.zInit = 1e-1; 
@@ -149,6 +158,7 @@ toc
 %% show result
 % iteration process information
 solver.showResult(Info)
+
 XTAU_Opt = reshape(solution.x, (x_Dim + tau_Dim), nStages);
 x_Opt = XTAU_Opt(1 : x_Dim, :);
 tau_Opt = XTAU_Opt(x_Dim + 1 : end, :);
@@ -160,21 +170,27 @@ K_value = K_Fun_map(x_Opt, tau_Opt, p_Opt);
 K_value = full(K_value);
 
 figure(111)
-subplot(3,1,1)
+subplot(4,1,1)
 plot(timeAxis, [InitState(1), x_Opt(1, :)], 'r',...
-     timeAxis, [InitState(2), x_Opt(2, :)], 'g', 'LineWidth',1.2)
-legend('x1', 'x2')
-xlabel('time(s)')
-title('system state')
+     timeAxis, [InitState(2), x_Opt(2, :)], 'g','LineWidth',1.2)
+legend('cart', 'pole')
+xlabel('time [s]')
+title('position')
 
-subplot(3,1,2)
+subplot(4,1,2)
+plot(timeAxis, [InitState(3), x_Opt(3, :)], 'r',...
+     timeAxis, [InitState(4), x_Opt(4, :)], 'g', 'LineWidth',1.2)
+xlabel('time [s]')
+title('velocity')
+
+subplot(4,1,3)
 plot(timeAxis(2:end), tau_Opt(1,:), 'LineWidth', 1.2)
-xlabel('time(s)')
+xlabel('time [s]')
 title('control')
 
-subplot(3,1,3)
+subplot(4,1,4)
 plot(timeAxis(2:end), p_Opt(1, :), 'k',...
      timeAxis(2:end), K_value(1, :), 'b', 'LineWidth', 1.2)
-legend('p', 'K') 
-xlabel('time(s)')
+legend('friction', 'cart vel') 
+xlabel('time [s]')
 title('equilibrium dynamics')
