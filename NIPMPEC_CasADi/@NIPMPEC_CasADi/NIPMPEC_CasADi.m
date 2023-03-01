@@ -152,14 +152,14 @@ classdef NIPMPEC_CasADi < handle
        % function, jacobian and Hessian evaluation
         Fun = FunctionEvaluation(self, Var, s, z, mode, FRP)          
         
-        Jac = JacobianEvaluation(self, Var, s, mode, FRP)
+        Jac = JacobianEvaluation(self, Var, Fun, s, z, mode, FRP)
         
         Hessian = HessianEvaluation(self, Var, Jac, s, mode, FRP)
         
         % KKT evaluation
         [KKT_Residual, KKT_Error] = computeKKT_Residual_Error(self, Var, Fun, Jac)
         
-        KKT_Matrix = computeKKT_Matrix(self, Fun, Jac, Hessian)
+        KKT_Matrix = computeKKT_Matrix(self, Jac, Hessian)
         
         % evaluate search direction
         [dY, Info] = SearchDirection(self, KKT_Residual, KKT_Matrix) 
@@ -169,7 +169,7 @@ classdef NIPMPEC_CasADi < handle
             KKT_Residual, KKT_Matrix, dY_k, mode, FRP)
         
         % Second Order Correction
-        Var_SOC = SecondOrderCorrection(self, Var, Fun, KKT_Residual, KKT_Matrix, Fun_full)
+        Var_SOC = SecondOrderCorrection(self, Var, Jac, KKT_Residual, KKT_Matrix, Fun_full)
         
         % Feasibility Restoration Phase
         [Var_FRP, Info] = FeasibilityRestorationPhase_MinDeviation(self, Var_Ref, Fun_Ref, Jac_Ref, s, z)

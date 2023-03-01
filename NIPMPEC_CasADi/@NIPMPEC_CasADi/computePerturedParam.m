@@ -2,6 +2,7 @@ function [s_k, z_k, Fun_k] = computePerturedParam(self, Var_k, Fun_k, s, z)
 %UNTITLED34 Summary of this function goes here
 %   Detailed explanation goes here
 Option = self.Option;
+FunObj = self.FunObj;
 sEnd = Option.sEnd;
 zEnd = Option.zEnd;
 
@@ -32,53 +33,34 @@ end
 
 %% update Fun_k
 if (s_k == s) && (z_k == z)
-    % both s and z do not update, hence no function need to be updated
-    
+    % both s and z do not update, hence no function need to be updated 
 elseif (s_k ~= s) && (z_k == z)
     % only s is update, hence update function about PHI
     % PHI
-    PHI_k = self.FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
+    PHI_k = FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
     Fun_k.PHI = full(PHI_k);
     % FB for PHI
-    PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphi = full(PSIphi_k);      
-    [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
-    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);    
-       
+    PSIphi_k = FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
+    Fun_k.PSIphi = full(PSIphi_k);              
 elseif (s_k == s) && (z_k ~= z)
     % only z is update, hence update function about FB
     % FB for G
-    PSIg_k = self.FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
+    PSIg_k = FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
     Fun_k.PSIg = full(PSIg_k);    
-    [PSIgSigma_diagVec_k, PSIgG_diagVec_k] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
-    Fun_k.PSIgSigma_diagVec = full(PSIgSigma_diagVec_k);
-    Fun_k.PSIgG_diagVec = full(PSIgG_diagVec_k);
     % FB for PHI
-    PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphi = full(PSIphi_k);    
-    [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
-    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);
-    
+    PSIphi_k = FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
+    Fun_k.PSIphi = full(PSIphi_k);       
 else
     % both s and z update, hence update function about PHI and FB
     % PHI
-    PHI_k = self.FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
+    PHI_k = FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
     Fun_k.PHI = full(PHI_k);
     % FB for G
-    PSIg_k = self.FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
+    PSIg_k = FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
     Fun_k.PSIg = full(PSIg_k);    
-    [PSIgSigma_diagVec_k, PSIgG_diagVec_k] = self.FunObj.FB_G_grad(Var_k.sigma, Fun_k.G, z_k);
-    Fun_k.PSIgSigma_diagVec = full(PSIgSigma_diagVec_k);
-    Fun_k.PSIgG_diagVec = full(PSIgG_diagVec_k);
     % FB for PHI
-    PSIphi_k = self.FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphi = full(PSIphi_k);    
-    [PSIphiGamma_diagVec_k, PSIphiPHI_diagVec_k] = self.FunObj.FB_PHI_grad(Var_k.gamma, Fun_k.PHI, z_k);
-    Fun_k.PSIphiGamma_diagVec = full(PSIphiGamma_diagVec_k);
-    Fun_k.PSIphiPHI_diagVec = full(PSIphiPHI_diagVec_k);    
-        
+    PSIphi_k = FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
+    Fun_k.PSIphi = full(PSIphi_k);             
 end
 
 end

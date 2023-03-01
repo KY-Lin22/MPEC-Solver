@@ -92,7 +92,7 @@ for k = 1 : maxIterNum + 1
     %% step 1: Evaluate KKT Residual of Previous Iterate
     % Jacobian
     Jacobian_TimeStart = tic;
-    Jac = self.JacobianEvaluation(Var, s, 'Regular', []);
+    Jac = self.JacobianEvaluation(Var, Fun, s, z, 'Regular', []);
     TimeElasped_Jacobian = toc(Jacobian_TimeStart);
     
     % totalCost, KKT residual and error
@@ -178,7 +178,7 @@ for k = 1 : maxIterNum + 1
     TimeElasped_JacobianHessian = TimeElasped_Jacobian + TimeElasped_Hessian;
     % KKT matrix
     KKT_Matrix_TimeStart = tic;
-    KKT_Matrix = self.computeKKT_Matrix(Fun, Jac, Hessian);
+    KKT_Matrix = self.computeKKT_Matrix(Jac, Hessian);
     TimeElasped_KKT_Matrix = toc(KKT_Matrix_TimeStart);
     TimeElasped_KKT = TimeElasped_KKT_Residual + TimeElasped_KKT_Matrix;
     

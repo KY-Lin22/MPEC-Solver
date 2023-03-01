@@ -7,9 +7,9 @@ nu_G = self.Option.RegularParam.nu_G;
 
 %% KKT Residual
 % primal feasibility
-G_Fsb = - Fun.PSIg./(Fun.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
+G_Fsb = - Fun.PSIg./(Jac.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
 C_Fsb = Fun.C;
-PHI_Fsb = - Fun.PSIphi./(Fun.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
+PHI_Fsb = - Fun.PSIphi./(Jac.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
 
 % dual feasibility
 LAGx = Jac.Lx - Var.sigma' * Jac.Gx + Var.eta' * Jac.Cx - Var.gamma' * Jac.PHIx;

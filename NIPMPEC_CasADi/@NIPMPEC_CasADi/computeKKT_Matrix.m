@@ -1,4 +1,4 @@
-function KKT_Matrix = computeKKT_Matrix(self, Fun, Jac, Hessian)
+function KKT_Matrix = computeKKT_Matrix(self, Jac, Hessian)
 %UNTITLED30 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -9,9 +9,9 @@ nu_J = self.Option.RegularParam.nu_J;
 nu_H = self.Option.RegularParam.nu_H;
 
 % diag matrix vector: D = diag(d), nu_J,  E = diag(e);
-d = -(Fun.PSIgSigma_diagVec - nu_G * ones(Dim.sigma, 1))./(Fun.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
+d = -(Jac.PSIgSigma_diagVec - nu_G * ones(Dim.sigma, 1))./(Jac.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
 nu_J_vec = -nu_J*ones(Dim.eta, 1);
-e = -(Fun.PSIphiGamma_diagVec - nu_G * ones(Dim.gamma, 1))./(Fun.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
+e = -(Jac.PSIphiGamma_diagVec - nu_G * ones(Dim.gamma, 1))./(Jac.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
 diagVec = [d; nu_J_vec; e];
 %% assemble KKT matrix
 % J = [D,                           zeros(Dim.sigma, Dim.eta),  zeros(Dim.sigma, Dim.gamma),  -G_grad;...

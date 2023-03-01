@@ -28,15 +28,16 @@ Var_Init = struct('x', Var_Ref.x, 'p', Var_Ref.p, 'w', Var_Ref.w,...
 % init Fun (reusing Fun_Ref except the cost function)
 Fun_Init = struct('L', 0,...% no deviation for the VarInit
     'G', Fun_Ref.G, 'C', Fun_Ref.C, 'PHI',Fun_Ref.PHI,...
-    'PSIg', Fun_Ref.PSIg, 'PSIgSigma_diagVec', Fun_Ref.PSIgSigma_diagVec, 'PSIgG_diagVec', Fun_Ref.PSIgG_diagVec,...
-    'PSIphi', Fun_Ref.PSIphi, 'PSIphiGamma_diagVec', Fun_Ref.PSIphiGamma_diagVec, 'PSIphiPHI_diagVec', Fun_Ref.PSIphiPHI_diagVec);
+    'PSIg', Fun_Ref.PSIg,  'PSIphi', Fun_Ref.PSIphi);
 
 % init Jac
 [FRP_Lx_Init, FRP_Lp_Init, FRP_Lw_Init] = self.FunObj.FRP_L_grad(Var_Ref.x, Var_Ref.p, Var_Ref.w, FRP.ZRef, FRP.ZWeight);
 Jac_Init = struct('Lx', full(FRP_Lx_Init), 'Lp', full(FRP_Lp_Init), 'Lw', full(FRP_Lw_Init),...
     'Gx', Jac_Ref.Gx, 'Gp', Jac_Ref.Gp, 'Gw', Jac_Ref.Gw,...
     'Cx', Jac_Ref.Cx, 'Cp', Jac_Ref.Cp, 'Cw', Jac_Ref.Cw,...
-    'PHIx', Jac_Ref.PHIx, 'PHIp', Jac_Ref.PHIp, 'PHIw', Jac_Ref.PHIw);
+    'PHIx', Jac_Ref.PHIx, 'PHIp', Jac_Ref.PHIp, 'PHIw', Jac_Ref.PHIw,...
+    'PSIgSigma_diagVec', Jac_Ref.PSIgSigma_diagVec, 'PSIgG_diagVec', Jac_Ref.PSIgG_diagVec,...
+    'PSIphiGamma_diagVec', Jac_Ref.PSIphiGamma_diagVec, 'PSIphiPHI_diagVec', Jac_Ref.PSIphiPHI_diagVec);
 
 % init Feasibility
 Feasibility_Init = norm([Fun_Init.PSIg; Fun_Init.C; Fun_Init.PSIphi], 1);
@@ -91,8 +92,7 @@ for j = 1 : maxIterNum + 1
             L = self.FunObj.L(Var_FRP.x, Var_FRP.p, Var_FRP.w);
             Fun_FRP = struct('L', full(L),...
                 'G', Fun.G, 'C', Fun.C, 'PHI',Fun.PHI,...
-                'PSIg', Fun.PSIg, 'PSIgSigma_diagVec', Fun.PSIgSigma_diagVec, 'PSIgG_diagVec', Fun.PSIgG_diagVec,...
-                'PSIphi', Fun.PSIphi, 'PSIphiGamma_diagVec', Fun.PSIphiGamma_diagVec, 'PSIphiPHI_diagVec', Fun.PSIphiPHI_diagVec);
+                'PSIg', Fun.PSIg, 'PSIphi', Fun.PSIphi);
             % termination message
             terminationMsg_1 = ['FRP returns a less infeasibility iterate after ', num2str(j - 1), ' iteration; '];
             terminationMsg_2 = ['Feasibility: ', num2str(Feasibility_Init), '(Init)-->', num2str(Feasibility), '(End); ',...
@@ -124,12 +124,12 @@ for j = 1 : maxIterNum + 1
     if j == 1
         Jac = Jac_Init;
     else       
-        Jac = self.JacobianEvaluation(Var, s, 'FRP', FRP);
+        Jac = self.JacobianEvaluation(Var, Fun, s, z, 'FRP', FRP);
     end
     [KKT_Residual, ~] = self.computeKKT_Residual_Error(Var, Fun, Jac);
     % Hessian and KKT matrix
     Hessian = self.HessianEvaluation(Var, Jac, s, 'FRP', FRP);
-    KKT_Matrix = self.computeKKT_Matrix(Fun, Jac, Hessian);
+    KKT_Matrix = self.computeKKT_Matrix(Jac, Hessian);
     
     %% step 5: Search Direction Evaluation
     [dY_k, ~] = self.SearchDirection(KKT_Residual, KKT_Matrix);

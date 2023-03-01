@@ -1,4 +1,4 @@
-function Var_SOC = SecondOrderCorrection(self, Var, Fun, KKT_Residual, KKT_Matrix, Fun_full)
+function Var_SOC = SecondOrderCorrection(self, Var, Jac, KKT_Residual, KKT_Matrix, Fun_full)
 
 Dim = self.MPEC.Dim;
 nu_G = self.Option.RegularParam.nu_G;
@@ -6,12 +6,12 @@ nu_G = self.Option.RegularParam.nu_G;
 % SOC KKT residual
 KKT_Residual_SOC = struct('G_Fsb', [], 'C_Fsb', [], 'PHI_Fsb', [],...
     'LAGxT', KKT_Residual.LAGxT, 'LAGpT', KKT_Residual.LAGpT, 'LAGwT', KKT_Residual.LAGwT);
-G_Fsb_Correct = - Fun_full.PSIg./(Fun.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
+G_Fsb_Correct = - Fun_full.PSIg./(Jac.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
 KKT_Residual_SOC.G_Fsb = KKT_Residual.G_Fsb + G_Fsb_Correct;
 
 KKT_Residual_SOC.C_Fsb = KKT_Residual.C_Fsb + Fun_full.C;
 
-PHI_Fsb_Correct = - Fun_full.PSIphi./(Fun.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
+PHI_Fsb_Correct = - Fun_full.PSIphi./(Jac.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
 KKT_Residual_SOC.PHI_Fsb = KKT_Residual.PHI_Fsb + PHI_Fsb_Correct;
 
 % compute second order correction direction and var

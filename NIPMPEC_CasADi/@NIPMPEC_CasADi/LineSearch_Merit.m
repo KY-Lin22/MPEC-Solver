@@ -72,7 +72,7 @@ while ~hasFoundNewIterate
     elseif (strcmp(mode, 'Regular')) && (employSOC) && (stepSize_trial == 1) && (totalCost_trail <= totalCost)
         % estimate second order correction (SOC) Var and merit
         Fun_full = Fun_trial;
-        Var_trial = self.SecondOrderCorrection(Var, Fun, KKT_Residual, KKT_Matrix, Fun_full);
+        Var_trial = self.SecondOrderCorrection(Var, Jac, KKT_Residual, KKT_Matrix, Fun_full);
         
         Fun_trial = self.FunctionEvaluation(Var_trial, s, z, 'Regular', []);
         totalCost_trail = Fun_trial.L;
