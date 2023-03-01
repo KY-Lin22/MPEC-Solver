@@ -5,23 +5,23 @@ function Fun = FunctionEvaluation(self, Var, s, z, mode, FRP)
 % PSIg 
 % PSIphi
 % 
-
+FunObj = self.FunObj;
 % cost function
 switch mode
     case 'Regular'
-        L = self.FunObj.L(Var.x, Var.p, Var.w);
+        L = FunObj.L(Var.x, Var.p, Var.w);
     case 'FRP'
-        L = self.FunObj.FRP_L(Var.x, Var.p, Var.w, FRP.ZRef, FRP.ZWeight);
+        L = FunObj.FRP_L(Var.x, Var.p, Var.w, FRP.ZRef, FRP.ZWeight);
 end
 
 % constraint
-G = self.FunObj.G(Var.x, Var.p, Var.w);
-C = self.FunObj.C(Var.x, Var.p, Var.w);
-PHI = self.FunObj.PHI(Var.x, Var.p, Var.w, s);
+G = FunObj.G(Var.x, Var.p, Var.w);
+C = FunObj.C(Var.x, Var.p, Var.w);
+PHI = FunObj.PHI(Var.x, Var.p, Var.w, s);
 
 % FB function for G and PHI
-PSIg = self.FunObj.FB_G(Var.sigma, full(G), z);
-PSIphi = self.FunObj.FB_PHI(Var.gamma, full(PHI), z);
+PSIg = FunObj.FB_G(Var.sigma, full(G), z);
+PSIphi = FunObj.FB_PHI(Var.gamma, full(PHI), z);
 
 %
 Fun = struct('L', full(L),...

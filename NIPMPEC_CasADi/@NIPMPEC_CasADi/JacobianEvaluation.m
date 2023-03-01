@@ -9,23 +9,23 @@ function Jac = JacobianEvaluation(self, Var, Fun, s, z, mode, FRP)
 % PSIgG_diagVec
 % PSIphiGamma_diagVec 
 % PSIphiPHI_diagVec
-
+FunObj = self.FunObj;
 % cost function Jacobian
 switch mode
     case 'Regular'
-        [Lx, Lp, Lw] = self.FunObj.L_grad(Var.x, Var.p, Var.w);
+        [Lx, Lp, Lw] = FunObj.L_grad(Var.x, Var.p, Var.w);
     case 'FRP'
-        [Lx, Lp, Lw] = self.FunObj.FRP_L_grad(Var.x, Var.p, Var.w, FRP.ZRef, FRP.ZWeight);
+        [Lx, Lp, Lw] = FunObj.FRP_L_grad(Var.x, Var.p, Var.w, FRP.ZRef, FRP.ZWeight);
 end
 
 % constraint Jacobian
-[Gx, Gp, Gw] = self.FunObj.G_grad(Var.x, Var.p, Var.w);
-[Cx, Cp, Cw] = self.FunObj.C_grad(Var.x, Var.p, Var.w);
-[PHIx, PHIp, PHIw] = self.FunObj.PHI_grad(Var.x, Var.p, Var.w, s);
+[Gx, Gp, Gw] = FunObj.G_grad(Var.x, Var.p, Var.w);
+[Cx, Cp, Cw] = FunObj.C_grad(Var.x, Var.p, Var.w);
+[PHIx, PHIp, PHIw] = FunObj.PHI_grad(Var.x, Var.p, Var.w, s);
 
 % FB Jacobian for G and PHI
-[PSIgSigma_diagVec, PSIgG_diagVec] = self.FunObj.FB_G_grad(Var.sigma, Fun.G, z);
-[PSIphiGamma_diagVec, PSIphiPHI_diagVec] = self.FunObj.FB_PHI_grad(Var.gamma, Fun.PHI, z);
+[PSIgSigma_diagVec, PSIgG_diagVec] = FunObj.FB_G_grad(Var.sigma, Fun.G, z);
+[PSIphiGamma_diagVec, PSIphiPHI_diagVec] = FunObj.FB_PHI_grad(Var.gamma, Fun.PHI, z);
 
 %
 Jac = struct('Lx', full(Lx), 'Lp', full(Lp), 'Lw', full(Lw),...

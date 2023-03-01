@@ -3,10 +3,11 @@ function KKT_Matrix = computeKKT_Matrix(self, Jac, Hessian)
 %   Detailed explanation goes here
 
 Dim = self.MPEC.Dim;
+Option = self.Option;
 % regular parameter
-nu_G = self.Option.RegularParam.nu_G;
-nu_J = self.Option.RegularParam.nu_J;
-nu_H = self.Option.RegularParam.nu_H;
+nu_G = Option.RegularParam.nu_G;
+nu_J = Option.RegularParam.nu_J;
+nu_H = Option.RegularParam.nu_H;
 
 % diag matrix vector: D = diag(d), nu_J,  E = diag(e);
 d = -(Jac.PSIgSigma_diagVec - nu_G * ones(Dim.sigma, 1))./(Jac.PSIgG_diagVec - nu_G * ones(Dim.sigma, 1));
@@ -20,7 +21,7 @@ diagVec = [d; nu_J_vec; e];
 %     zeros(Dim.gamma, Dim.sigma),  zeros(Dim.gamma, Dim.eta),  E,                            -PHI_grad;...
 %     -G_grad',                     C_grad',                    -PHI_grad',                   Hessian + nu_H*eye(Dim.Z)]; 
 
-if strcmp(self.Option.linearSystemSolver, 'mldivide_sparse')
+if strcmp(Option.linearSystemSolver, 'mldivide_sparse')
     %% sparse
     % diagVec
     i_diagVec = 1 : Dim.Node(3);

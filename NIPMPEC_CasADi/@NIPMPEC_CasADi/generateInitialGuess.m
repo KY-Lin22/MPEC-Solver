@@ -1,8 +1,9 @@
 function generateInitialGuess(self)
 %UNTITLED8 Summary of this function goes here
 %   Detailed explanation goes here
-
-Dim = self.MPEC.Dim;
+MPEC = self.MPEC;
+FunObj = self.FunObj;
+Dim = MPEC.Dim;
 % init
 Var = struct('x', [], 'p', [], 'w', [],...
     'sigma', [], 'eta', [], 'gamma', []);
@@ -13,16 +14,16 @@ disp('Generating Initial Guess...')
 Var.x = zeros(Dim.x, 1);
 p = zeros(Dim.p, 1);
 for i = 1 : Dim.p
-    if (self.MPEC.l(i) == 0) && (self.MPEC.u(i) == Inf)
+    if (MPEC.l(i) == 0) && (MPEC.u(i) == Inf)
         % nonlinear complementary problem
         p(i, 1) = 1; % p > 0
     else
         % box constraint variation inequality
-        p(i, 1) = 1/2 * (self.MPEC.l(i) + self.MPEC.u(i)); % l < = p < = u
+        p(i, 1) = 1/2 * (MPEC.l(i) + MPEC.u(i)); % l < = p < = u
     end
 end
 Var.p = p;
-K = self.FunObj.K(Var.x, Var.p);
+K = FunObj.K(Var.x, Var.p);
 Var.w = full(K);
 
 %% generate initial guess for dual variable
