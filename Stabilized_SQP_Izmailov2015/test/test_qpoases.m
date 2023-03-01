@@ -11,6 +11,9 @@ qp.h = H.sparsity();
 qp.a = A.sparsity();
 S = conic('S','qpoases',qp);
 disp(S)
+% H = full(H);
+% g = full(g);
+% A = full(A);
 tic
 r = S('h', H, 'g', g,...
       'a', A, 'lba', lba);

@@ -2,13 +2,13 @@
 
 clear all
 clc
+%% Dynamics
 addpath('E:\GitHub\CasADi\casadi-windows-matlabR2016a-v3.5.5')
 import casadi.*
 
 timeStep = 0.02;
 nStages = 50; 
 
-%% Dynamics
 % dynamics variables
 tau_Dim = 1;% control dim
 x_Dim = 2; % state dim
