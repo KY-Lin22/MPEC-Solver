@@ -15,9 +15,9 @@ switch mode
 end
 
 % constraint
-G = FunObj.G(Var.x, Var.p, Var.w);
+G = FunObj.G(Var.x, Var.p);
 C = FunObj.C(Var.x, Var.p, Var.w);
-PHI = FunObj.PHI(Var.x, Var.p, Var.w, s);
+PHI = FunObj.PHI(Var.p, Var.w, s);
 
 % FB function for G and PHI
 PSIg = FunObj.FB_G(Var.sigma, full(G), z);

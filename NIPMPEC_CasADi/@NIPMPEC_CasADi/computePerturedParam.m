@@ -41,7 +41,7 @@ if (s_k == s) && (z_k == z)
 elseif (s_k ~= s) && (z_k == z)
     % only s is update, hence update function about PHI
     % PHI
-    PHI_k = FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
+    PHI_k = FunObj.PHI(Var_k.p, Var_k.w, s_k);
     Fun_k.PHI = full(PHI_k);
     % FB for PHI
     PSIphi_k = FunObj.FB_PHI(Var_k.gamma, Fun_k.PHI, z_k);
@@ -59,7 +59,7 @@ elseif (s_k == s) && (z_k ~= z)
 else
     % both s and z update, hence update function about PHI and FB
     % PHI
-    PHI_k = FunObj.PHI(Var_k.x, Var_k.p, Var_k.w, s_k);
+    PHI_k = FunObj.PHI(Var_k.p, Var_k.w, s_k);
     Fun_k.PHI = full(PHI_k);
     % FB for G
     PSIg_k = FunObj.FB_G(Var_k.sigma, Fun_k.G, z_k);
