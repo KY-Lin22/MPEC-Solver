@@ -56,12 +56,15 @@ classdef NIPMPEC_CasADi < handle
             % Output:
             %          self: instance of this class
             
+            disp('Generating Solver Object...')
             % import CasADi to workspace
             import casadi.* 
             %% check and poblish input
+            disp('-- Checking Input...')
             MPEC = self.checkInput(MPEC);
             
-            %% initialize properties: MPEC       
+            %% initialize properties: MPEC   
+            disp('-- Initializing Properties: MPEC...')
             % symbolic representation of problem variable and function
             Dim = struct('x', size(MPEC.x, 1), 'p', size(MPEC.p, 1), 'w', size(MPEC.p, 1));         
             self.MPEC = struct('Dim', Dim,...
@@ -122,11 +125,14 @@ classdef NIPMPEC_CasADi < handle
                 self.MPEC.Dim.x, self.MPEC.Dim.p, self.MPEC.Dim.w]);           
             
             %% initialize properties: Option
+            disp('-- Initializing Properties: Option...')
             self.Option = self.createOption();                        
             
             %% initialize properties: FunObj
+            disp('-- Initializing Properties: FunObj...')
             self.FunObj = self.createFunObj();
             
+            disp('Done!')
         end
         
     end 

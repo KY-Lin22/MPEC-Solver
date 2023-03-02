@@ -11,7 +11,7 @@ disp('*------------------------ MPEC Problem Information -----------------------
 disp(['Number of Total Variables: ........................', num2str(Dim.Y)])
 disp(['Number of Primal Variable: ........................', num2str(Dim.Z)])
 disp(['- x(optimal variable): ............................', num2str(Dim.x)])
-disp(['- p(algebraic state): .............................', num2str(Dim.p)])
+disp(['- p(algebraic variable): ..........................', num2str(Dim.p)])
 disp(['- w(auxiliary variable): ..........................', num2str(Dim.w)])
 
 disp(['Number of Dual Variable: ..........................', num2str(Dim.LAMBDA)])
@@ -30,12 +30,17 @@ disp(['- KKT Error Tolerance(Total): .............', num2str(Option.Tolerance.KK
 disp(['                     (Feasibility): .......', num2str(Option.Tolerance.KKT_Error_Feasibility)])
 disp(['                     (Stationarity): ......', num2str(Option.Tolerance.KKT_Error_Stationarity)])
 disp('2. Options for Function and Jacobian Evaluation')
+disp(['- Employ Sparse Pattern:...................', mat2str(Option.employSparsePattern)])
 disp(['- Hessian Approximation Method: ...........', Option.HessianApproximation])
 disp(['- Singularity Regular Parameter(J): .......', num2str(Option.RegularParam.nu_J)])
 disp(['                               (G): .......', num2str(Option.RegularParam.nu_G)])
 disp(['                               (H): .......', num2str(Option.RegularParam.nu_H)])
 disp('3. Options for Search Direction Evaluation')
-disp(['- Solve Linear System Method: .............', Option.linearSystemSolver])
+if Option.employSparsePattern
+    disp(['- Solve Linear System Method: .............', 'mldivide_sparse'])
+else
+    disp(['- Solve Linear System Method: .............', Option.linearSystemSolver])
+end
 disp('4. Options for Line Search')
 disp(['- Employ Second Order Correction: .........', mat2str(Option.employSecondOrderCorrection)]);
 disp(['- stepSize_Min: ...........................', num2str(Option.LineSearch.stepSize_Min)])
