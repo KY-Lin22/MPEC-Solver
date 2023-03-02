@@ -12,9 +12,9 @@ C_Fsb = Fun.C;
 PHI_Fsb = - Fun.PSIphi./(Jac.PSIphiPHI_diagVec - nu_G * ones(Dim.gamma, 1));
 
 % dual feasibility
-LAGx = Jac.Lx - Var.sigma' * Jac.Gx + Var.eta' * Jac.Cx - Var.gamma' * Jac.PHIx;
+LAGx = Jac.Lx - Var.sigma' * Jac.Gx + Var.eta' * Jac.Cx;
 LAGp = Jac.Lp - Var.sigma' * Jac.Gp + Var.eta' * Jac.Cp - Var.gamma' * Jac.PHIp;
-LAGw = Jac.Lw - Var.sigma' * Jac.Gw + Var.eta' * Jac.Cw - Var.gamma' * Jac.PHIw;
+LAGw = Jac.Lw                       + Var.eta' * Jac.Cw - Var.gamma' * Jac.PHIw;
 
 %
 KKT_Residual = struct('G_Fsb', G_Fsb, 'C_Fsb', C_Fsb, 'PHI_Fsb', PHI_Fsb,...

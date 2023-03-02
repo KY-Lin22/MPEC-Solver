@@ -2,9 +2,9 @@ function Jac = JacobianEvaluation(self, Var, Fun, s, z, mode, FRP)
 %JacobianEvaluation
 %   return struct Jac with fileds including the following values
 % Lx Lp Lw
-% Gx Gp Gw
+% Gx Gp 
 % Cx Cp Cw
-% PHIx PHIp PHIw
+% PHIp PHIw
 % PSIgSigma_diagVec 
 % PSIgG_diagVec
 % PSIphiGamma_diagVec 
@@ -19,9 +19,9 @@ switch mode
 end
 
 % constraint Jacobian
-[Gx, Gp, Gw] = FunObj.G_grad(Var.x, Var.p, Var.w);
+[Gx, Gp] = FunObj.G_grad(Var.x, Var.p);
 [Cx, Cp, Cw] = FunObj.C_grad(Var.x, Var.p, Var.w);
-[PHIx, PHIp, PHIw] = FunObj.PHI_grad(Var.x, Var.p, Var.w, s);
+[PHIp, PHIw] = FunObj.PHI_grad(Var.p, Var.w, s);
 
 % FB Jacobian for G and PHI
 [PSIgSigma_diagVec, PSIgG_diagVec] = FunObj.FB_G_grad(Var.sigma, Fun.G, z);
@@ -29,9 +29,9 @@ end
 
 %
 Jac = struct('Lx', full(Lx), 'Lp', full(Lp), 'Lw', full(Lw),...
-    'Gx', full(Gx), 'Gp', full(Gp), 'Gw', full(Gw),...
+    'Gx', full(Gx), 'Gp', full(Gp),...
     'Cx', full(Cx), 'Cp', full(Cp), 'Cw', full(Cw),...
-    'PHIx', full(PHIx), 'PHIp', full(PHIp), 'PHIw', full(PHIw),...
+    'PHIp', full(PHIp), 'PHIw', full(PHIw),...
     'PSIgSigma_diagVec', full(PSIgSigma_diagVec),...
     'PSIgG_diagVec', full(PSIgG_diagVec),...
     'PSIphiGamma_diagVec', full(PSIphiGamma_diagVec),...
