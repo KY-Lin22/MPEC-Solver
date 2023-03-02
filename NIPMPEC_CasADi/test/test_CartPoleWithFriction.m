@@ -134,9 +134,9 @@ Var_Init = Gen_InitialGuess.Var;
 %% solving MPEC
 solver.Option.printLevel = 2;
 solver.Option.maxIterNum = 500;
-solver.Option.Tolerance.KKT_Error_Total = 1e-2;
-solver.Option.Tolerance.KKT_Error_Feasibility = 1e-4;
-solver.Option.Tolerance.KKT_Error_Stationarity = 1e-4;
+solver.Option.Tolerance.KKT_Error_Total = 1e-6;
+solver.Option.Tolerance.KKT_Error_Feasibility = 1e-8;
+solver.Option.Tolerance.KKT_Error_Stationarity = 1e-8;
 
 solver.Option.HessianApproximation = 'CostFunction'; %  'Exact', 'CostFunction', 'GaussNewton'
 solver.Option.RegularParam.nu_J = 1e-7;
@@ -149,9 +149,9 @@ solver.Option.LineSearch.stepSize_Min = 0.01;
 solver.Option.employFeasibilityRestorationPhase = true;
 
 solver.Option.zInit = 1e-1; 
-solver.Option.zEnd  = 1e-3;
+solver.Option.zEnd  = 1e-8;
 solver.Option.sInit = 1e-1;
-solver.Option.sEnd  = 1e-3;
+solver.Option.sEnd  = 1e-8;
 
 tic
 [solution, Info] = solver.solveMPEC(Var_Init);
