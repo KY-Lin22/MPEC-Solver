@@ -26,7 +26,8 @@ end
 [Cx, Cp, Cw] = FunObj.C_grad(Var.x, Var.p, Var.w);
 [PHIp, PHIw] = FunObj.PHI_grad(Var.p, Var.w, s);
 
-if strcmp(Option.linearSystemSolver, 'mldivide_sparse')
+% save
+if Option.employSparsePattern
     Jac = struct('Lx', sparse(Lx), 'Lp', sparse(Lp), 'Lw', sparse(Lw),...
         'Gx', sparse(Gx), 'Gp', sparse(Gp),...
         'Cx', sparse(Cx), 'Cp', sparse(Cp), 'Cw', sparse(Cw),...

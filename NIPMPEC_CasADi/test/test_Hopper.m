@@ -170,11 +170,11 @@ solver.Option.Tolerance.KKT_Error_Total = 1e-2;
 solver.Option.Tolerance.KKT_Error_Feasibility = 1e-4;
 solver.Option.Tolerance.KKT_Error_Stationarity = 1e-4;
 
+solver.Option.employSparsePattern = true;
 solver.Option.HessianApproximation = 'CostFunction'; %  'Exact', 'CostFunction', 'GaussNewton'
 solver.Option.RegularParam.nu_J = 1e-7;
 solver.Option.RegularParam.nu_G = 1e-7;
 solver.Option.RegularParam.nu_H = 0;
-solver.Option.linearSystemSolver = 'mldivide_sparse'; % 'linsolve_Sym_dense', 'mldivide_dense', 'mldivide_sparse', 'pinv'
 
 solver.Option.LineSearch.stepSize_Min = 0.01;
 solver.Option.employFeasibilityRestorationPhase = true;

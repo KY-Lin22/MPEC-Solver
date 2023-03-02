@@ -13,14 +13,15 @@ Option.Tolerance.KKT_Error_Feasibility = 1e-3;
 Option.Tolerance.KKT_Error_Stationarity = 1e-3;
 
 %% Options for Function and Jacobian Evaluation
+Option.employSparsePattern = true;
 Option.HessianApproximation = 'CostFunction'; %  'Exact', 'CostFunction', 'GaussNewton',
 % singularity regular parameter for KKT matrix 
 Option.RegularParam.nu_J = 1e-7; % rank-deficiency of equality-type constraint
 Option.RegularParam.nu_G = 1e-8; % non-negative definite of diagonal matrix related to inequality-type constraint
 Option.RegularParam.nu_H = 0; % non-positive definite of Hessian matrix
 
-%% Options for Search Direction Evaluation
-Option.linearSystemSolver = 'linsolve_Sym_dense'; % 'linsolve_Sym_dense', 'mldivide_dense', 'mldivide_sparse', 'pinv'
+%% Options for Search Direction Evaluation (only for dense pattern)
+Option.linearSystemSolver = 'linsolve_Sym_dense'; % 'linsolve_Sym_dense', 'mldivide_dense', 'pinv'
 
 %% Options for Line Search
 Option.employSecondOrderCorrection = true;

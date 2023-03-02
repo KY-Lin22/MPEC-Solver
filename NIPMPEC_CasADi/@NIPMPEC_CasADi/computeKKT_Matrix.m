@@ -21,8 +21,8 @@ diagVec = [d; nu_J_vec; e];
 %     zeros(Dim.gamma, Dim.sigma),  zeros(Dim.gamma, Dim.eta),  E,                            -PHI_grad;...
 %     -G_grad',                     C_grad',                    -PHI_grad',                   Hessian + nu_H*eye(Dim.Z)]; 
 
-if strcmp(Option.linearSystemSolver, 'mldivide_sparse')
-    %% sparse
+if Option.employSparsePattern
+    %% sparse pattern
     % diagVec
     i_diagVec = 1 : Dim.Node(3);
     j_diagVec = i_diagVec;
@@ -98,7 +98,7 @@ if strcmp(Option.linearSystemSolver, 'mldivide_sparse')
     J = sparse(i, j, s, Dim.Y, Dim.Y, length(s));
 
 else
-    %% dense
+    %% dense pattern
     % Constraint Jacobian
     ConstraintJacobian =...
         [-Jac.Gx,                 -Jac.Gp,    zeros(Dim.sigma, Dim.w);...

@@ -28,10 +28,12 @@ switch mode
         
 end
 
-if strcmp(Option.linearSystemSolver, 'mldivide_sparse')
+% save
+if Option.employSparsePattern
     Hessian = sparse(Hessian);
 else
     Hessian = full(Hessian);
 end
+
 end
 
