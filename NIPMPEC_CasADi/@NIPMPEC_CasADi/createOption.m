@@ -44,11 +44,22 @@ Option.FRP.stepSize_Min = 0.0001;
 Option.FRP.stepSize_DecayRate = 0.5;
 
 %% Options for Perturbed Parameter
-Option.zInit = 0.1; % init and end perturbed parameter z in smoothing FB function
+% init and end perturbed parameter z in smoothing FB function
+Option.zInit = 0.1; 
 Option.zEnd = 0.001;
 
-Option.sInit = 0.1; % init and end perturbed parameter s in perturbed equilibrium dynamics
+% init and end perturbed parameter s in perturbed equilibrium dynamics
+Option.sInit = 0.1; 
 Option.sEnd  = 0.001;
+
+% update s and z
+Option.kappa_s_times = 0.2;
+Option.kappa_s_exp = 1.5;
+Option.kappa_z_times = 0.2;
+Option.kappa_z_exp = 1.5;
+
+% threshold weight
+Option.kappa_F = 2;
 
 end
 
