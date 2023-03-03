@@ -7,8 +7,8 @@ import casadi.*
 timeStep = 0.02;
 nStages = 100;
 sInit = 1e-1;
-sEnd = 1e-5; 
-zEnd = 1e-5;
+sEnd = 1e-3; 
+zEnd = 1e-3;
 
 x_Dim = 1;
 p_Dim = 1;
