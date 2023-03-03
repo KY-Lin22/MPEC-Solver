@@ -62,9 +62,10 @@ Record.Time = struct('JacobianHessian', 0, 'KKT', 0, 'SearchDirection', 0, 'Line
     'else', 0, 'total', 0);
 
 %% solving MPEC
-disp('******************************************************************');
-disp('Computing the Optimal Solution for MPEC...');
-
+if (Option.printLevel == 1) || (Option.printLevel == 2)
+    disp('******************************************************************');
+    disp('Computing the Optimal Solution for MPEC...');
+end
 % initialize regular iteration routine (x: previous iterate; x_k: current iterate)
 VarType = 'Init';
 Var = struct('x', Var_Init.x, 'p', Var_Init.p, 'w', Var_Init.w,...
@@ -271,7 +272,9 @@ for k = 1 : maxIterNum + 1
   
 end
 
-disp('******************************************************************');
+if (Option.printLevel == 1) || (Option.printLevel == 2)
+    disp('******************************************************************');
+end
 
 end
 
