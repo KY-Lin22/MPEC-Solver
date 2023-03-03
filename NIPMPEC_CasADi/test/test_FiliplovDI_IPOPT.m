@@ -132,11 +132,7 @@ while true
         'lbg', args.lbg, 'ubg', args.ubg);
     HomotopyTime = toc(HomotopyTime_Start);
     % check IPOPT status
-    if ~strcmp(solver.stats.return_status, 'Solve_Succeeded')
-        % IPOPT fails
-        disp('IPOPT fails')
-        break
-    else
+    if strcmp(solver.stats.return_status, 'Solve_Succeeded')
         % pring information (solver.stats)
         msg = ['Homotopy Iter: ', num2str(homotopy_counter), '; ',...
             's: ', num2str(args.p,'%10.2e'), '; ',...
@@ -144,6 +140,10 @@ while true
             'Ipopt IterNum: ', num2str(solver.stats.iter_count), '; ',...
             'Time: ', num2str(1000*HomotopyTime,'%10.2e'), ' ms'];
         disp(msg)
+    else
+        % IPOPT fails
+        disp('IPOPT fails')
+        break        
     end
     % check termination of homotopy
     if (args.p == sEnd) && (strcmp(solver.stats.return_status, 'Solve_Succeeded'))
@@ -160,10 +160,10 @@ end
 toc(totalTime_Start)
 
 %%
-XTAUPW_Opt = reshape(full(solution.x), (x_Dim + p_Dim + w_Dim), nStages);
-x_Opt   = XTAUPW_Opt(1                 : x_Dim, :);
-p_Opt   = XTAUPW_Opt(1 + x_Dim         : x_Dim + p_Dim, :);
-w_Opt   = XTAUPW_Opt(1 + x_Dim + p_Dim : end, :);
+XPW_Opt = reshape(full(solution.x), (x_Dim + p_Dim + w_Dim), nStages);
+x_Opt   = XPW_Opt(1                 : x_Dim, :);
+p_Opt   = XPW_Opt(1 + x_Dim         : x_Dim + p_Dim, :);
+w_Opt   = XPW_Opt(1 + x_Dim + p_Dim : end, :);
 
 timeAxis = 0 : timeStep : nStages * timeStep;
 

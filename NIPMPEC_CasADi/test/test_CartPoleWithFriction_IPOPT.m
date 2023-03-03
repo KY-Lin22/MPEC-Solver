@@ -6,18 +6,20 @@ import casadi.*
 
 timeStep = 0.01;
 nStages = 400;
-s = 1e-1; % slack 
-z = 1e-4;
+sInit = 1e-1;
+sEnd = 1e-8; 
+zEnd = 1e-8;
 
 x_Dim = 4;
 tau_Dim = 1;
 p_Dim = 1;
 w_Dim = p_Dim; % auxiliary var
-
+s_Dim = 1; % regularization parameter
 x = SX.sym('x', x_Dim);
 tau = SX.sym('tau', tau_Dim);
 p = SX.sym('p', p_Dim);
 w = SX.sym('w', w_Dim);
+s = SX.sym('s', s_Dim);
 
 InitState = [1; 0/180*pi; 0; 0];
 RefState = [1; 180/180*pi; 0; 0];
@@ -54,7 +56,7 @@ BVI = [p - eqlbm.l;...
     w - eqlbm.K;...% auxiliary variable
     s - (p - eqlbm.l) * w;...
     s + (eqlbm.u - p) * w];% regularization
-BVI_Fun = Function('BVI_Fun', {x, tau, p, w}, {BVI}, {'x', 'tau', 'p', 'w'}, {'BVI'});
+BVI_Fun = Function('BVI_Fun', {x, tau, p, w, s}, {BVI}, {'x', 'tau', 'p', 'w', 's'}, {'BVI'});
 lbg_BVI = [0; 0; 0; 0; 0];
 ubg_BVI = [Inf; Inf; 0; Inf; Inf];
 
@@ -80,6 +82,7 @@ X = SX.sym('X', x_Dim, nStages); % state variable
 TAU = SX.sym('TAU', tau_Dim, nStages); % control variable
 P = SX.sym('P', p_Dim, nStages); % algebraic variable
 W = SX.sym('W', w_Dim, nStages); % auxilary variable
+S = SX.sym('S', s_Dim, 1);% regularizaton parameter
 
 x_Max = [5; 240/180*pi; 20; 20];
 x_Min = [0; -240/180*pi; -20; -20];
@@ -119,34 +122,84 @@ for n = 1 : nStages
     % discretize dynamics by implicit Euler method
     F_n = x_nPrev - x_n + timeStep * f_Fun(x_n, tau_n, p_n);   
     % reformulated equilibrium constraint
-    BVI_n = BVI_Fun(x_n, tau_n, p_n, w_n); 
+    BVI_n = BVI_Fun(x_n, tau_n, p_n, w_n, S); 
     % constraint function
     g(:, n) = [F_n;...
         BVI_n];     
 end
 
-% solver
+OCPEC = struct('x', reshape([X; TAU; P; W], (x_Dim + tau_Dim + p_Dim + w_Dim) * nStages, 1),...
+    'f', L,...    
+    'g', reshape(g, g_Dim * nStages, 1),...
+    'p', S);
+
+args.lbx = reshape(lbx, [], 1);
+args.ubx = reshape(ubx, [], 1);
+args.lbg = reshape(lbg, [], 1);
+args.ubg = reshape(ubg, [], 1);
+
+% initialize x0 and s
+args.x0 = zeros((x_Dim + tau_Dim + p_Dim + w_Dim) * nStages, 1);
+args.p = sInit;
+
+% option (solver.print_options)
 Option = struct;
+Option.print_time = false;
 Option.ipopt.max_iter = 2000;
-Option.ipopt.tol = 1e-2;
-Option.ipopt.mu_target = 0.5 * (z)^2;
+Option.ipopt.tol = 1e-6;
+Option.ipopt.mu_target = 0.5 * (zEnd)^2;
+Option.ipopt.print_level = 0;
 
-OCPEC = struct('f', L,...
-    'x', reshape([X; TAU; P; W], (x_Dim + tau_Dim + p_Dim + w_Dim) * nStages, 1),...
-    'g', reshape(g, g_Dim * nStages, 1));
-
+% create solver
 solver = nlpsol('solver', 'ipopt', OCPEC, Option);
-solution = solver('lbx', reshape(lbx, [], 1),...
-    'ubx', reshape(ubx, [], 1),...
-    'lbg', reshape(lbg, [], 1),...
-    'ubg', reshape(ubg, [], 1)); 
+
+%% homotopy
+kappa_s_times = 0.2;
+kappa_s_exp = 1.5;
+homotopy_counter = 1;
+
+totalTime_Start = tic;
+while true
+    % Homotopy (outer) iteration
+    HomotopyTime_Start = tic;
+    solution = solver('x0', args.x0, 'p',args.p,...
+        'lbx', args.lbx, 'ubx', args.ubx,...
+        'lbg', args.lbg, 'ubg', args.ubg);
+    HomotopyTime = toc(HomotopyTime_Start);
+    % check IPOPT status
+    if strcmp(solver.stats.return_status, 'Solve_Succeeded')
+        % pring information (solver.stats)
+        msg = ['Homotopy Iter: ', num2str(homotopy_counter), '; ',...
+            's: ', num2str(args.p,'%10.2e'), '; ',...
+            'Cost: ', num2str(full(solution.f),'%10.2e'), '; ',...
+            'Ipopt IterNum: ', num2str(solver.stats.iter_count), '; ',...
+            'Time: ', num2str(1000*HomotopyTime,'%10.2e'), ' ms'];
+        disp(msg)
+    else
+        % IPOPT fails
+        disp('IPOPT fails')
+        break
+    end
+    % check termination of homotopy
+    if (args.p == sEnd) && (strcmp(solver.stats.return_status, 'Solve_Succeeded'))
+        % success
+        break
+    else
+        % update x0 and s for next homotopy iteration
+        args.x0 = solution.x;
+        s_trail = min([kappa_s_times .* args.p, args.p.^kappa_s_exp]);
+        args.p = max([s_trail, sEnd]);
+        homotopy_counter = homotopy_counter + 1;        
+    end
+end
+toc(totalTime_Start)
 
 %%
 XTAUPW_Opt = reshape(full(solution.x), (x_Dim + tau_Dim + p_Dim + w_Dim), nStages);
 x_Opt   = XTAUPW_Opt(1                           : x_Dim, :);
 tau_Opt = XTAUPW_Opt(1 + x_Dim                   : x_Dim + tau_Dim, :);
 p_Opt   = XTAUPW_Opt(1 + x_Dim + tau_Dim         : x_Dim + tau_Dim + p_Dim, :);
-w_Opt   = XTAUPW_Opt(1 + x_Dim + tau_Dim + w_Dim : end, :);
+w_Opt   = XTAUPW_Opt(1 + x_Dim + tau_Dim + p_Dim : end, :);
 
 timeAxis = 0 : timeStep : nStages * timeStep;
 
