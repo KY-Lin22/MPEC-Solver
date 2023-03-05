@@ -12,7 +12,7 @@ import casadi.*
 x = SX.sym('x', 1, 1);
 p = SX.sym('p', 1, 1);
 L = (x(1) - 1)^2 + (p(1) - 1)^2;
-G = x;
+G = [];
 C = [];
 l = 0;
 u = Inf;
