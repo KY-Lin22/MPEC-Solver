@@ -157,7 +157,7 @@ solver = nlpsol('solver', 'ipopt', OCPEC, Option);
 kappa_s_times = 0.2;
 kappa_s_exp = 1.5;
 homotopy_counter = 1;
-
+totalIter = 0;
 totalTime_Start = tic;
 while true
     % Homotopy (outer) iteration
@@ -169,6 +169,7 @@ while true
     % check IPOPT status
     if strcmp(solver.stats.return_status, 'Solve_Succeeded')
         % pring information (solver.stats)
+        totalIter = totalIter + solver.stats.iter_count;
         msg = ['Homotopy Iter: ', num2str(homotopy_counter), '; ',...
             's: ', num2str(args.p,'%10.2e'), '; ',...
             'Cost: ', num2str(full(solution.f),'%10.2e'), '; ',...
@@ -193,6 +194,7 @@ while true
     end
 end
 toc(totalTime_Start)
+disp(['total iteration: ', num2str(totalIter)])
 
 %%
 XTAUPW_Opt = reshape(full(solution.x), (x_Dim + tau_Dim + p_Dim + w_Dim), nStages);
